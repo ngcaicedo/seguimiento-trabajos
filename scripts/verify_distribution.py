@@ -44,6 +44,13 @@ import seguimiento_trabajos
 from seguimiento_trabajos.api.app import create_app
 from seguimiento_trabajos.config.settings import Settings
 from seguimiento_trabajos.config.database import create_database
+from seguimiento_trabajos.modulos.seguimiento.dominio.objetos_valor import (
+    DatosCreacion, DatosResultadoCotizacion, Procedencia, IdentidadSeguimiento,
+)
+from seguimiento_trabajos.modulos.seguimiento.dominio.vistas import VistaSeguimiento
+from seguimiento_trabajos.modulos.seguimiento.dominio.servicios import combinar
+from seguimiento_trabajos.seedwork.dominio.validaciones import validar_identidad
+from seguimiento_trabajos.seedwork.dominio.excepciones import DatosInvalidos
 
 package = Path(seguimiento_trabajos.__file__).resolve()
 assert package.is_relative_to(Path(sys.prefix).resolve()), package
@@ -53,6 +60,10 @@ for namespace in ('modulos.seguimiento', 'seedwork'):
         importlib.import_module(f'seguimiento_trabajos.{namespace}.{layer}')
 assert create_app(Settings()).title == 'Seguimiento de Trabajos'
 assert callable(create_database)
+assert all(callable(component) for component in (
+    DatosCreacion, DatosResultadoCotizacion, VistaSeguimiento, Procedencia,
+    IdentidadSeguimiento, combinar, validar_identidad, DatosInvalidos,
+))
 print(f'Installed wheel imported outside source tree: {package}')
 """
         subprocess.run([str(interpreter), "-I", "-c", verification], cwd=temporary_path, check=True)

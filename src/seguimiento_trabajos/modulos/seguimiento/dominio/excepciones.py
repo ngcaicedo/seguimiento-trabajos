@@ -1,0 +1,2 @@
+class ConflictoFragmentos(ValueError):
+    pass

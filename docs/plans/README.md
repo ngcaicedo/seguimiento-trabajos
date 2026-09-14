@@ -1,6 +1,6 @@
 # Plan de construcción — Seguimiento de Trabajos
 
-Estado: plan 01 implementado y verificado; planes 02–08 pendientes. Sustitución aprobada por Nicolás el 2026-09-13. Responsable del incremento 01: Nicolás. Repositorio: `entrega4/seguimiento-trabajos`; paquete `seguimiento_trabajos`; módulo `seguimiento`.
+Estado: planes 01 y 02 implementados y verificados; planes 03–08 pendientes. Sustitución aprobada por Nicolás el 2026-09-13. Responsable del incremento 01: Nicolás. Repositorio: `entrega4/seguimiento-trabajos`; paquete `seguimiento_trabajos`; módulo `seguimiento`.
 
 ## Responsabilidad
 
@@ -29,7 +29,7 @@ Cotizaciones añade duracion_estimada_minutos opcional a CotizacionRegistrada; S
 | Plan | Resultado | Dependencia |
 |---|---|---|
 | [01](01-base-tecnologica.md) | Implementado: base tecnológica y pruebas aisladas | Ninguna |
-| [02](02-modelo-vista-seedwork.md) | Vista de seguimiento y reglas de combinación | 01 |
+| [02](02-modelo-vista-seedwork.md) | Implementado: vista de seguimiento y reglas de combinación | 01 |
 | [03](03-casos-uso-idempotencia.md) | Proyectar hechos con idempotencia | 02 |
 | [04](04-postgresql-vista-inbox.md) | PostgreSQL, fragmentos e inbox | 03 |
 | [05](05-pulsar-lectores-v1.md) | Consumidores reales y lectores v1 | 04; contratos reales de Orquestación y Cotizaciones |

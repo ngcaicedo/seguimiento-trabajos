@@ -1,0 +1,2 @@
+class DatosInvalidos(ValueError):
+    pass
