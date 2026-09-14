@@ -51,6 +51,14 @@ from seguimiento_trabajos.modulos.seguimiento.dominio.vistas import VistaSeguimi
 from seguimiento_trabajos.modulos.seguimiento.dominio.servicios import combinar
 from seguimiento_trabajos.seedwork.dominio.validaciones import validar_identidad
 from seguimiento_trabajos.seedwork.dominio.excepciones import DatosInvalidos
+from seguimiento_trabajos.config.bootstrap import componer_seguimiento, CasosUsoSeguimiento
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.metadatos import MetadatosProyeccion
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.excepciones import ConflictoMensaje
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.unidad_trabajo import (
+    UnidadTrabajoSeguimiento,
+)
+from seguimiento_trabajos.modulos.seguimiento.dominio.repositorios import RepositorioSeguimiento
+from seguimiento_trabajos.seedwork.aplicacion.reloj import Reloj
 
 package = Path(seguimiento_trabajos.__file__).resolve()
 assert package.is_relative_to(Path(sys.prefix).resolve()), package
@@ -63,6 +71,8 @@ assert callable(create_database)
 assert all(callable(component) for component in (
     DatosCreacion, DatosResultadoCotizacion, VistaSeguimiento, Procedencia,
     IdentidadSeguimiento, combinar, validar_identidad, DatosInvalidos,
+    componer_seguimiento, CasosUsoSeguimiento,
+    MetadatosProyeccion, ConflictoMensaje, UnidadTrabajoSeguimiento, RepositorioSeguimiento, Reloj,
 ))
 print(f'Installed wheel imported outside source tree: {package}')
 """
