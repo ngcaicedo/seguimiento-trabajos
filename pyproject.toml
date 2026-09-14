@@ -10,6 +10,7 @@ dependencies = [
     "sqlalchemy>=2.0,<2.1",
     "psycopg[binary]>=3.2,<4",
     "alembic>=1.16,<2",
+    "pulsar-client[avro]==3.13.0",
 ]
 
 [dependency-groups]
@@ -43,3 +44,7 @@ strict = true
 
 [tool.uv.build-backend]
 module-name = "seguimiento_trabajos"
+
+[[tool.mypy.overrides]]
+module = ["pulsar", "pulsar.*"]
+ignore_missing_imports = true

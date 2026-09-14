@@ -1,0 +1,13 @@
+{
+  "estado": "provisional_local_no_exportado_por_productores",
+  "fuente": "docs/plans/comun/01-contratos-y-datos.md",
+  "sha256_fuente": "d232cdf20f7422a9e319cc2f620c09f01f1c3bcd293ddaf5d58dbafea0ff849e",
+  "artefactos": {
+    "cotizacion-rechazada-v1.avsc": "d210f082f51d7592d8052d16f3c6ab02ed55a8518d0cb316d0df586ce6a941df",
+    "cotizacion-rechazada-v1.ejemplo.json": "fb6fbf0c24d444c9f74403c649c158b4320595afc71994e9d3ced2f11d104703",
+    "cotizacion-registrada-v1.avsc": "057aaf0d8d67f52b637560fcdfd117c2106a46bf9e79a7ff1e813baf34562914",
+    "cotizacion-registrada-v1.ejemplo.json": "d89d370326cca63c2b6173406e418459e16ce4ee75fa165bc3fb3a3770079cee",
+    "trabajo-creado-v1.avsc": "08c88291c42fc22cb9e4dc17068e74ec72b33ffcdb9b4a91a9e902ee062773fb",
+    "trabajo-creado-v1.ejemplo.json": "c1e421b57c96e3b5d4715014aff75d5cf40588a79cc5e2fe81ba996cf86e4dcf"
+  }
+}

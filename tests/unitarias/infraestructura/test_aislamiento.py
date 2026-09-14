@@ -45,3 +45,25 @@ finally:
         check=False,
     )
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
+
+
+def test_seedwork_mensajeria_no_importa_modulos_ni_configuracion() -> None:
+    codigo = """
+import importlib.abc, sys
+class Bloqueo(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname.startswith((
+            'seguimiento_trabajos.modulos', 'seguimiento_trabajos.config',
+            'seguimiento_trabajos.api', 'pulsar',
+        )):
+            raise AssertionError(fullname)
+sys.meta_path.insert(0, Bloqueo())
+from seguimiento_trabajos.seedwork.infraestructura.ciclos import Ciclo
+from seguimiento_trabajos.seedwork.infraestructura.consumidor_pulsar import ConsumidorPulsar
+from seguimiento_trabajos.seedwork.infraestructura.reloj import RelojSistema
+assert RelojSistema().ahora().tzinfo is not None
+"""
+    resultado = subprocess.run(
+        [sys.executable, "-I", "-c", codigo], capture_output=True, text=True, timeout=10
+    )
+    assert resultado.returncode == 0, resultado.stderr

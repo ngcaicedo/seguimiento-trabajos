@@ -1,0 +1,21 @@
+{
+  "id_trabajo": "00000000-0000-0000-0000-000000000001",
+  "id_solicitud": "00000000-0000-0000-0000-000000000002",
+  "id_partner": "00000000-0000-0000-0000-000000000003",
+  "id_peticion": "00000000-0000-0000-0000-000000000004",
+  "tipo": "TrabajoCreado.v1",
+  "event_id": "00000000-0000-0000-0000-00000000000a",
+  "version_contrato": 1,
+  "instante": "2026-09-13T00:00:00+00:00",
+  "correlacion": "00000000-0000-0000-0000-000000000002",
+  "causacion": "00000000-0000-0000-0000-00000000006e",
+  "referencia_externa": "PARTNER-1",
+  "categoria": "PLOMERIA",
+  "tipo_solicitud": "INSTALACION",
+  "tipo_red": "GENERAL_HDA",
+  "id_politica": "00000000-0000-0000-0000-000000000005",
+  "version_politica": 1,
+  "creado_en": "2026-09-12T00:00:00+00:00",
+  "version_trabajo": 1,
+  "estado": "PENDIENTE_COTIZACION"
+}

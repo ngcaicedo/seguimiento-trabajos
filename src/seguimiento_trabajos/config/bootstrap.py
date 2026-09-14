@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from seguimiento_trabajos.config.database import Database
+    from seguimiento_trabajos.config.settings import Settings
+    from seguimiento_trabajos.seedwork.infraestructura.consumidor_pulsar import ConsumidorPulsar
 
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.handlers.proyectar_creacion import (
     ProyectarCreacionHandler,
@@ -36,3 +38,36 @@ def componer_seguimiento_sql(base: "Database", reloj: Reloj) -> CasosUsoSeguimie
     from seguimiento_trabajos.config.persistencia import crear_uow
 
     return componer_seguimiento(crear_uow(base), reloj)
+
+
+def componer_consumidores(base: "Database", settings: "Settings") -> list["ConsumidorPulsar"]:
+    from pulsar.schema import AvroSchema
+
+    from seguimiento_trabajos.config.rutas import fuentes
+    from seguimiento_trabajos.modulos.seguimiento.infraestructura.consumidores import (
+        clasificar_error,
+        procesador,
+    )
+    from seguimiento_trabajos.modulos.seguimiento.infraestructura.esquemas.v1.eventos import (
+        esquemas,
+    )
+    from seguimiento_trabajos.seedwork.infraestructura.consumidor_pulsar import ConsumidorPulsar
+    from seguimiento_trabajos.seedwork.infraestructura.reloj import RelojSistema
+
+    casos = componer_seguimiento_sql(base, RelojSistema())
+    registros = esquemas()
+    return [
+        ConsumidorPulsar(
+            settings.pulsar_url,
+            fuente.topico,
+            fuente.suscripcion,
+            AvroSchema(registros[fuente.nombre]),
+            procesador(
+                fuente.tipo, fuente.topico, casos.proyectar_creacion, casos.proyectar_resultado
+            ),
+            clasificar_error,
+            recepcion_ms=settings.recepcion_ms,
+            reentrega_ms=settings.reentrega_ms,
+        )
+        for fuente in fuentes(settings)
+    ]

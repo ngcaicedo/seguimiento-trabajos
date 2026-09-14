@@ -74,6 +74,31 @@ from seguimiento_trabajos.modulos.seguimiento.infraestructura.serializacion impo
 from seguimiento_trabajos.modulos.seguimiento.infraestructura.unidad_trabajo import (
     UnidadTrabajoSeguimientoSQL,
 )
+from seguimiento_trabajos.seedwork.infraestructura.ciclos import Ciclo
+from seguimiento_trabajos.seedwork.infraestructura.consumidor_pulsar import ConsumidorPulsar
+from seguimiento_trabajos.seedwork.infraestructura.reloj import RelojSistema
+from seguimiento_trabajos.config.bootstrap import componer_consumidores
+from seguimiento_trabajos.modulos.seguimiento.infraestructura.esquemas.v1.eventos import esquemas
+from seguimiento_trabajos.config.procesamiento import Procesamiento
+from seguimiento_trabajos.config.rutas import fuentes
+from unittest.mock import Mock
+base_prueba = create_database('postgresql+psycopg://test@127.0.0.1:1/test')
+try:
+    consumidores = componer_consumidores(base_prueba, Settings())
+    assert len(consumidores) == 3 and len(esquemas()) == 3
+    assert all(consumidor._cliente is None for consumidor in consumidores)
+    cliente = Mock()
+    efecto = Mock()
+    consumidor = ConsumidorPulsar(
+        'pulsar://127.0.0.1:1', fuentes(Settings())[0].topico, 'distribucion',
+        Mock(), efecto, Mock(), crear_cliente=Mock(return_value=cliente),
+    )
+    assert consumidor.procesar_siguiente()
+    efecto.assert_called_once()
+    cliente.subscribe.return_value.acknowledge.assert_called_once()
+    consumidor.cerrar()
+finally:
+    base_prueba.close()
 assert set(metadata.tables) == {'inbox', 'seguimiento_trabajos'}
 assert all(callable(component) for component in (
     crear_uow, componer_seguimiento_sql, guardar_fragmento, cargar_fragmento,
