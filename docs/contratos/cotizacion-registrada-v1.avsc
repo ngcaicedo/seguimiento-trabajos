@@ -27,6 +27,10 @@
       "type": "string"
     },
     {
+      "name": "id_peticion",
+      "type": "string"
+    },
+    {
       "name": "id_trabajo",
       "type": "string"
     },
@@ -36,10 +40,6 @@
     },
     {
       "name": "id_partner",
-      "type": "string"
-    },
-    {
-      "name": "id_peticion",
       "type": "string"
     },
     {

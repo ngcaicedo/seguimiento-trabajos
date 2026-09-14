@@ -1,6 +1,7 @@
 {
   "type": "record",
   "name": "TrabajoCreadoV1",
+  "namespace": "orquestacion.eventos",
   "fields": [
     {
       "name": "event_id",
@@ -8,10 +9,12 @@
     },
     {
       "name": "tipo",
+      "default": "TrabajoCreado.v1",
       "type": "string"
     },
     {
       "name": "version_contrato",
+      "default": 1,
       "type": "int"
     },
     {
@@ -72,10 +75,12 @@
     },
     {
       "name": "estado",
+      "default": "PENDIENTE_COTIZACION",
       "type": "string"
     },
     {
       "name": "version_trabajo",
+      "default": 1,
       "type": "int"
     }
   ]
