@@ -53,12 +53,32 @@ from seguimiento_trabajos.seedwork.dominio.validaciones import validar_identidad
 from seguimiento_trabajos.seedwork.dominio.excepciones import DatosInvalidos
 from seguimiento_trabajos.config.bootstrap import componer_seguimiento, CasosUsoSeguimiento
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.metadatos import MetadatosProyeccion
-from seguimiento_trabajos.modulos.seguimiento.aplicacion.excepciones import ConflictoMensaje
+from seguimiento_trabajos.seedwork.aplicacion.excepciones import ConflictoMensaje
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.unidad_trabajo import (
     UnidadTrabajoSeguimiento,
 )
 from seguimiento_trabajos.modulos.seguimiento.dominio.repositorios import RepositorioSeguimiento
 from seguimiento_trabajos.seedwork.aplicacion.reloj import Reloj
+from seguimiento_trabajos.seedwork.aplicacion.unidad_trabajo import UnidadTrabajo
+from seguimiento_trabajos.seedwork.aplicacion.reintentos import reintentar_colision
+from seguimiento_trabajos.seedwork.infraestructura.unidad_trabajo_sqlalchemy import UnidadTrabajoSQL
+from seguimiento_trabajos.seedwork.infraestructura.serializacion import normalizar_documento
+assert all(callable(component) for component in (
+    UnidadTrabajo, UnidadTrabajoSQL, reintentar_colision, normalizar_documento,
+))
+from seguimiento_trabajos.config.persistencia import crear_uow, metadata
+from seguimiento_trabajos.config.bootstrap import componer_seguimiento_sql
+from seguimiento_trabajos.modulos.seguimiento.infraestructura.serializacion import (
+    guardar_fragmento, cargar_fragmento,
+)
+from seguimiento_trabajos.modulos.seguimiento.infraestructura.unidad_trabajo import (
+    UnidadTrabajoSeguimientoSQL,
+)
+assert set(metadata.tables) == {'inbox', 'seguimiento_trabajos'}
+assert all(callable(component) for component in (
+    crear_uow, componer_seguimiento_sql, guardar_fragmento, cargar_fragmento,
+    UnidadTrabajoSeguimientoSQL,
+))
 
 package = Path(seguimiento_trabajos.__file__).resolve()
 assert package.is_relative_to(Path(sys.prefix).resolve()), package

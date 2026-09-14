@@ -1,5 +1,9 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from seguimiento_trabajos.config.database import Database
 
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.handlers.proyectar_creacion import (
     ProyectarCreacionHandler,
@@ -26,3 +30,9 @@ def componer_seguimiento(
         proyectar_creacion=ProyectarCreacionHandler(crear_unidad, reloj),
         proyectar_resultado=ProyectarResultadoHandler(crear_unidad, reloj),
     )
+
+
+def componer_seguimiento_sql(base: "Database", reloj: Reloj) -> CasosUsoSeguimiento:
+    from seguimiento_trabajos.config.persistencia import crear_uow
+
+    return componer_seguimiento(crear_uow(base), reloj)

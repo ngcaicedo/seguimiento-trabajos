@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:17.6
+    environment:
+      POSTGRES_USER: seguimiento
+      POSTGRES_PASSWORD: seguimiento_local
+      POSTGRES_DB: seguimiento
+    ports:
+      - '127.0.0.1:55435:5432'
+    volumes:
+      - seguimiento_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U seguimiento -d seguimiento']
+      interval: 2s
+      timeout: 3s
+      retries: 20
+volumes:
+  seguimiento_postgres:

@@ -18,5 +18,5 @@ def create_database(database_url: str) -> Database:
     url = make_url(database_url)
     if url.drivername != "postgresql+psycopg":
         raise ValueError("Database URL must use postgresql+psycopg")
-    engine = create_engine(url)
+    engine = create_engine(url, isolation_level="READ COMMITTED")
     return Database(engine=engine, session_factory=sessionmaker(bind=engine))

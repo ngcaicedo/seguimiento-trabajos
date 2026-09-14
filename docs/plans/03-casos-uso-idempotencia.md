@@ -19,12 +19,12 @@ Rutas relativas a `src/seguimiento_trabajos/`:
 | Archivo | Responsabilidad |
 |---|---|
 | `modulos/seguimiento/dominio/repositorios.py` | Puerto específico para obtener/guardar `VistaSeguimiento` y garantizar una única asociación de petición a trabajo. |
-| `modulos/seguimiento/aplicacion/unidad_trabajo.py` | Contexto transaccional, acceso al repositorio, preparación/comparación de inbox, metadatos locales, confirmación y reversión. |
+| `modulos/seguimiento/aplicacion/unidad_trabajo.py` | Extiende el contrato transaccional del seedwork con repositorio, preparación/comparación de inbox y metadatos locales. |
 | `modulos/seguimiento/aplicacion/handlers/proyectar_creacion.py` | Coordinar recepción de creación y combinación con la vista disponible. |
 | `modulos/seguimiento/aplicacion/handlers/proyectar_resultado.py` | Coordinar recepción de propuesta o rechazo con el mismo flujo de proyección. |
 | `modulos/seguimiento/aplicacion/handlers/proyectar_fragmento.py` | Secuencia transaccional compartida por los dos handlers, con identidad lógica de inbox única. |
 | `modulos/seguimiento/aplicacion/metadatos.py` | Fechas locales inmutables normalizadas a UTC, separadas del modelo de dominio. |
-| `modulos/seguimiento/aplicacion/excepciones.py` | `ConflictoMensaje` para reutilización contradictoria de un ID en inbox. |
+| `seedwork/aplicacion/excepciones.py` | `ConflictoMensaje` para reutilización contradictoria de un ID en inbox; trasladada al seedwork al completar la separación de 04. |
 | `seedwork/aplicacion/reloj.py` | Puerto de reloj utilizado por los dos handlers para las fechas locales. |
 | `config/bootstrap.py` | Funciones de composición con factoría de UoW y reloj inyectados; sin conexiones ni reglas de negocio. |
 | `tests/unitarias/aplicacion/dobles/` | Repositorio, inbox, reloj y UoW con almacén confirmado y estado provisional aislado. |

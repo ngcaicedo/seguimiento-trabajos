@@ -6,13 +6,13 @@ from uuid import UUID
 import pytest
 
 from seguimiento_trabajos.config.bootstrap import componer_seguimiento
-from seguimiento_trabajos.modulos.seguimiento.aplicacion.excepciones import ConflictoMensaje
 from seguimiento_trabajos.modulos.seguimiento.dominio.excepciones import ConflictoFragmentos
 from seguimiento_trabajos.modulos.seguimiento.dominio.objetos_valor import (
     DatosCreacion,
     DatosResultadoCotizacion,
     TipoRed,
 )
+from seguimiento_trabajos.seedwork.aplicacion.excepciones import ConflictoMensaje
 from tests.unitarias.aplicacion.dobles.unidad_trabajo import AlmacenMemoria, RelojFijo
 from tests.unitarias.dominio.datos import creacion, propuesta, rechazo
 

@@ -7,7 +7,6 @@ from types import TracebackType
 from typing import Self
 from uuid import UUID
 
-from seguimiento_trabajos.modulos.seguimiento.aplicacion.excepciones import ConflictoMensaje
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.metadatos import MetadatosProyeccion
 from seguimiento_trabajos.modulos.seguimiento.dominio.excepciones import ConflictoFragmentos
 from seguimiento_trabajos.modulos.seguimiento.dominio.objetos_valor import (
@@ -15,6 +14,7 @@ from seguimiento_trabajos.modulos.seguimiento.dominio.objetos_valor import (
     DatosResultadoCotizacion,
 )
 from seguimiento_trabajos.modulos.seguimiento.dominio.vistas import VistaSeguimiento
+from seguimiento_trabajos.seedwork.aplicacion.excepciones import ConflictoMensaje
 
 
 @dataclass

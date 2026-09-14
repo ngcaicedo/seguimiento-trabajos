@@ -9,11 +9,13 @@ from seguimiento_trabajos.modulos.seguimiento.dominio.objetos_valor import (
     DatosResultadoCotizacion,
 )
 from seguimiento_trabajos.modulos.seguimiento.dominio.servicios import combinar
+from seguimiento_trabajos.seedwork.aplicacion.reintentos import reintentar_colision
 from seguimiento_trabajos.seedwork.aplicacion.reloj import Reloj
 
 CONSUMIDOR_PROYECCION = "seguimiento.proyeccion"
 
 
+@reintentar_colision
 def proyectar_fragmento(
     fragmento: DatosCreacion | DatosResultadoCotizacion,
     crear_unidad: Callable[[], UnidadTrabajoSeguimiento],

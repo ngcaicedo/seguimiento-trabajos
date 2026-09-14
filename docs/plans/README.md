@@ -1,6 +1,6 @@
 # Plan de construcción — Seguimiento de Trabajos
 
-Estado: planes 01–03 implementados y verificados; planes 04–08 pendientes. Sustitución aprobada por Nicolás el 2026-09-13. Responsable del incremento 01: Nicolás. Repositorio: `entrega4/seguimiento-trabajos`; paquete `seguimiento_trabajos`; módulo `seguimiento`.
+Estado: planes 01–04 implementados y verificados; planes 05–08 pendientes. Sustitución aprobada por Nicolás el 2026-09-13. Responsable del incremento 01: Nicolás. Repositorio: `entrega4/seguimiento-trabajos`; paquete `seguimiento_trabajos`; módulo `seguimiento`.
 
 ## Responsabilidad
 
@@ -31,7 +31,7 @@ Cotizaciones añade duracion_estimada_minutos opcional a CotizacionRegistrada; S
 | [01](01-base-tecnologica.md) | Implementado: base tecnológica y pruebas aisladas | Ninguna |
 | [02](02-modelo-vista-seedwork.md) | Implementado: vista de seguimiento y reglas de combinación | 01 |
 | [03](03-casos-uso-idempotencia.md) | Implementado: proyección e idempotencia con dobles | 02 |
-| [04](04-postgresql-vista-inbox.md) | PostgreSQL, fragmentos e inbox | 03 |
+| [04](04-postgresql-vista-inbox.md) | Implementado: PostgreSQL, fragmentos, metadatos e inbox; concurrencia y reinicio | 03 |
 | [05](05-pulsar-lectores-v1.md) | Consumidores reales y lectores v1 | 04; contratos reales de Orquestación y Cotizaciones |
 | [06](06-consultas-lector-v2.md) | API de consulta y lector v2 | 05 |
 | [07](07-evolucion-contratos-e3.md) | E3 reformulado: duración estimada de cotización | 06; escritor v2 de Cotizaciones |
@@ -42,3 +42,5 @@ Cotizaciones añade duracion_estimada_minutos opcional a CotizacionRegistrada; S
 Una instancia contiene un único proceso FastAPI: API y consumo de Pulsar administrados por lifespan; no publica mensajes ni necesita outbox. Se detiene, reinicia y escala el servicio completo. Los planes 01, 05 y 08 concretan la [base común](comun/02-base-de-implementacion.md) y el [protocolo de plataforma](comun/03-integracion-experimentos-y-entrega.md).
 
 [Evidencia local del plan 01](../evidencias/01-base-tecnologica.md). El apartado de arranque y despliegue describe la composición futura de 05; 01 todavía no consume Pulsar.
+
+[Evidencia local del plan 04](../evidencias/04-postgresql-vista-inbox.md): persistencia y recuperación SQL verificadas; transporte y consultas HTTP siguen para 05/06.

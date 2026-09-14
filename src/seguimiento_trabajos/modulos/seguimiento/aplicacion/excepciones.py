@@ -1,2 +1,0 @@
-class ConflictoMensaje(ValueError):
-    pass
