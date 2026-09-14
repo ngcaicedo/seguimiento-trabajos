@@ -432,10 +432,12 @@ def test_parada_durante_sql_acotada_y_sin_ack(
         esperar(lambda: len(estado(base)[2]) == 1)
 
 
+@pytest.mark.parametrize("resultado", ["cotizacion-registrada", "cotizacion-rechazada"])
 def test_http_real_con_consumo_y_cierre_limpio(
     base: Database,
     configuracion: Settings,
     publicador: Callable[..., Any],
+    resultado: str,
 ) -> None:
     import signal
     import socket
@@ -483,8 +485,35 @@ def test_http_real_con_consumo_y_cierre_limpio(
 
     try:
         esperar(listo)
-        publicador("trabajo-creado")
+        from tests.unitarias.dominio.datos import identidad
+
+        url = f"http://127.0.0.1:{puerto}/seguimiento/trabajos/{identidad().id_trabajo}"
+
+        def consultar() -> dict[str, Any]:
+            with urllib.request.urlopen(url, timeout=2) as response:
+                documento: dict[str, Any] = json.load(response)
+                return documento
+
+        publicador(resultado)
         esperar(lambda: len(estado(base)[2]) == 1)
+        parcial = consultar()
+        assert parcial["creacion_recibida"] is False
+        assert parcial["referencia_externa"] is None
+        assert parcial["estado"] == (
+            "COTIZACION_REGISTRADA"
+            if resultado == "cotizacion-registrada"
+            else "COTIZACION_RECHAZADA"
+        )
+        publicador("trabajo-creado")
+        esperar(lambda: len(estado(base)[2]) == 2)
+        completa = consultar()
+        assert completa["creacion_recibida"] is True
+        assert completa["referencia_externa"] is not None
+        for campo in ("estado", "id_cotizacion", "importe_menor", "motivo"):
+            assert completa[campo] == parcial[campo]
+        antes = estado(base)
+        assert consultar() == completa
+        assert estado(base) == antes
         assert listo()
     finally:
         inicio = monotonic()

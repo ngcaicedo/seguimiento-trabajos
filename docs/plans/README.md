@@ -1,6 +1,6 @@
 # Plan de construcción — Seguimiento de Trabajos
 
-Estado: planes 01–04 implementados; 05 implementado y verificado localmente con productores de contrato, integración grupal pendiente; planes 06–08 pendientes. Sustitución aprobada por Nicolás el 2026-09-13. Responsable del incremento 01: Nicolás. Repositorio: `entrega4/seguimiento-trabajos`; paquete `seguimiento_trabajos`; módulo `seguimiento`.
+Estado: planes 01–04 implementados; 05 implementado y verificado localmente con productores de contrato, integración grupal pendiente; 06 implementado y verificado localmente; planes 07–08 pendientes. Sustitución aprobada por Nicolás el 2026-09-13. Responsable del incremento 01: Nicolás. Repositorio: `entrega4/seguimiento-trabajos`; paquete `seguimiento_trabajos`; módulo `seguimiento`.
 
 ## Responsabilidad
 
@@ -22,6 +22,8 @@ Persistir vista/fragmentos/inbox en la misma transacción, bloqueando por trabaj
 
 ## E3 reformulado
 
+Evolución futura, fuera del alcance aprobado de la POC V1 del plan 06. Requiere retomar y ajustar el plan 07 antes de implementarse.
+
 Cotizaciones añade duracion_estimada_minutos opcional a CotizacionRegistrada; Seguimiento v2 muestra el dato y filtra ofertas por duración máxima. Null significa desconocido. No es scoring, SLA ni duración observada. Orquestación y cinco lectores antiguos de prueba siguen sin cambios. El informe identifica el reemplazo de la ficha original y los límites académicos.
 
 ## Secuencia
@@ -33,7 +35,7 @@ Cotizaciones añade duracion_estimada_minutos opcional a CotizacionRegistrada; S
 | [03](03-casos-uso-idempotencia.md) | Implementado: proyección e idempotencia con dobles | 02 |
 | [04](04-postgresql-vista-inbox.md) | Implementado: PostgreSQL, fragmentos, metadatos e inbox; concurrencia y reinicio | 03 |
 | [05](05-pulsar-lectores-v1.md) | Implementado localmente: consumidores V1, seedwork, health y recuperación; integración grupal pendiente | 04; contratos reales de Orquestación y Cotizaciones |
-| [06](06-consultas-lector-v2.md) | API de consulta y lector v2 | 05 |
+| [06](06-consultas-lector-v2.md) | Implementado: POC V1, GET de seguimiento por ID | 05 |
 | [07](07-evolucion-contratos-e3.md) | E3 reformulado: duración estimada de cotización | 06; escritor v2 de Cotizaciones |
 | [08](08-despliegue-sustentacion.md) | Despliegue y sustentación | 07 |
 
@@ -43,4 +45,4 @@ Una instancia contiene un único proceso FastAPI: API y consumo de Pulsar admini
 
 [Evidencia local del plan 01](../evidencias/01-base-tecnologica.md). La composición de 05 ya consume Pulsar en modo operativo; 01 se conserva como evidencia histórica de la base técnica.
 
-[Evidencia local del plan 04](../evidencias/04-postgresql-vista-inbox.md): persistencia y recuperación SQL verificadas; el transporte local de 05 tiene [evidencia propia](../evidencias/05-pulsar-lectores-v1.md); consultas empresariales siguen para 06.
+[Evidencia local del plan 04](../evidencias/04-postgresql-vista-inbox.md): persistencia y recuperación SQL verificadas; el transporte local de 05 tiene [evidencia propia](../evidencias/05-pulsar-lectores-v1.md); el GET por ID de 06 tiene [evidencia de consulta propia](../evidencias/06-consultas-v1.md).

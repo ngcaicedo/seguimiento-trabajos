@@ -1,16 +1,21 @@
+from collections.abc import Callable
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.exc import OperationalError, TimeoutError
 from sqlalchemy.orm import Session
 
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.metadatos import MetadatosProyeccion
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.vistas import RespuestaSeguimiento
 from seguimiento_trabajos.modulos.seguimiento.dominio.excepciones import ConflictoFragmentos
 from seguimiento_trabajos.modulos.seguimiento.dominio.vistas import VistaSeguimiento
 from seguimiento_trabajos.modulos.seguimiento.infraestructura.mapeadores import (
     actualizar_fila,
+    cargar_respuesta,
     cargar_vista,
 )
 from seguimiento_trabajos.modulos.seguimiento.infraestructura.vistas import VistaSeguimientoSQL
+from seguimiento_trabajos.seedwork.aplicacion.excepciones import PersistenciaNoDisponible
 
 
 class RepositorioSeguimientoSQL:
@@ -58,3 +63,18 @@ class RepositorioSeguimientoSQL:
             raise ValueError("Vista ausente para metadatos")
         fila.primera_recepcion_en = metadatos.primera_recepcion_en
         fila.proyectada_en = metadatos.proyectada_en
+
+
+class RepositorioLecturaSeguimientoSQL:
+    def __init__(self, crear_sesion: Callable[[], Session]) -> None:
+        self.crear_sesion = crear_sesion
+
+    def obtener(self, id_trabajo: UUID) -> RespuestaSeguimiento | None:
+        try:
+            with self.crear_sesion() as sesion:
+                fila = sesion.scalar(
+                    select(VistaSeguimientoSQL).where(VistaSeguimientoSQL.id_trabajo == id_trabajo)
+                )
+                return cargar_respuesta(fila) if fila is not None else None
+        except (OperationalError, TimeoutError) as error:
+            raise PersistenciaNoDisponible("Persistencia no disponible") from error

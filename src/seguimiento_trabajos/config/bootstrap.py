@@ -2,6 +2,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.handlers.consultar_seguimiento import (
+    ConsultarSeguimientoHandler,
+)
+
 if TYPE_CHECKING:
     from seguimiento_trabajos.config.database import Database
     from seguimiento_trabajos.config.settings import Settings
@@ -71,3 +75,11 @@ def componer_consumidores(base: "Database", settings: "Settings") -> list["Consu
         )
         for fuente in fuentes(settings)
     ]
+
+
+def componer_consulta(base: "Database") -> ConsultarSeguimientoHandler:
+    from seguimiento_trabajos.modulos.seguimiento.infraestructura.repositorios import (
+        RepositorioLecturaSeguimientoSQL,
+    )
+
+    return ConsultarSeguimientoHandler(RepositorioLecturaSeguimientoSQL(base.session_factory))

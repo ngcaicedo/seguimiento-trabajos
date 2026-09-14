@@ -5,6 +5,7 @@ from typing import Annotated, cast
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from seguimiento_trabajos.api.seguimiento import router
 from seguimiento_trabajos.config.database import Database, create_database
 from seguimiento_trabajos.config.procesamiento import Procesamiento, procesar_eventos
 from seguimiento_trabajos.config.settings import Settings
@@ -70,4 +71,5 @@ def create_app(
         salud = procesamiento.salud()
         return JSONResponse(salud, status_code=200 if salud["status"] == "ok" else 503)
 
+    application.include_router(router)
     return application

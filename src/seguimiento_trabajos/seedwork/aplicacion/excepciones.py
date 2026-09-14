@@ -4,3 +4,7 @@ class ColisionPersistencia(RuntimeError):
 
 class ConflictoMensaje(ValueError):
     pass
+
+
+class PersistenciaNoDisponible(RuntimeError):
+    pass

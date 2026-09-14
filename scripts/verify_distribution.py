@@ -111,7 +111,13 @@ assert (package.parent / 'py.typed').is_file()
 for namespace in ('modulos.seguimiento', 'seedwork'):
     for layer in ('dominio', 'aplicacion', 'infraestructura'):
         importlib.import_module(f'seguimiento_trabajos.{namespace}.{layer}')
-assert create_app(Settings()).title == 'Seguimiento de Trabajos'
+application = create_app(Settings())
+assert application.title == 'Seguimiento de Trabajos'
+operation = application.openapi()['paths']['/seguimiento/trabajos/{id_trabajo}']['get']
+assert set(operation['responses']) == {'200', '404', '422', '503'}
+from seguimiento_trabajos.config.bootstrap import componer_consulta
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.vistas import RespuestaSeguimiento
+assert callable(componer_consulta) and callable(RespuestaSeguimiento)
 assert callable(create_database)
 assert all(callable(component) for component in (
     DatosCreacion, DatosResultadoCotizacion, VistaSeguimiento, Procedencia,

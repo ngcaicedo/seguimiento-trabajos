@@ -1,8 +1,8 @@
 # Seguimiento de Trabajos
 
-Planes 01–05 implementados y verificados localmente: base FastAPI, modelo, persistencia PostgreSQL y tres consumidores Pulsar V1. El cierre grupal con productores propietarios sigue pendiente; los schemas y productores de prueba se identifican en [contratos](docs/contratos/README.md).
+Planes 01–06 implementados: base FastAPI, modelo, persistencia PostgreSQL, tres consumidores Pulsar V1 y consulta por ID. El cierre grupal con productores propietarios sigue pendiente; los schemas y productores de prueba se identifican en [contratos](docs/contratos/README.md).
 
-El modelo puro combina TrabajoCreado y los resultados de Cotizaciones en una vista inmutable. Los casos de uso coordinan proyección, inbox y metadatos mediante una UoW comprobada con dobles y PostgreSQL real. El modo operativo inicia tres hilos de consumo desde lifespan; las consultas empresariales siguen para 06. El modo técnico predeterminado solo ofrece health y no inicia consumo.
+El modelo puro combina TrabajoCreado y los resultados de Cotizaciones en una vista inmutable. Los casos de uso coordinan proyección, inbox y metadatos mediante una UoW comprobada con dobles y PostgreSQL real. El modo operativo inicia tres hilos de consumo desde lifespan; el GET por ID consulta los datos confirmados de la proyección. El modo técnico no inicia consumo; puede consultar si tiene DB configurada.
 
 ## Instalación y ejecución
 
@@ -19,7 +19,7 @@ Desde otra terminal:
 curl --fail --silent --show-error -i http://127.0.0.1:8003/health/live
 ```
 
-Respuesta esperada: HTTP 200 y `{"status":"ok","service":"seguimiento-trabajos"}`. Detener con Ctrl+C. Liveness acredita que el proceso responde. `/health/ready` devuelve 503 en este modo técnico; no hay API de consultas de trabajos todavía.
+Respuesta esperada: HTTP 200 y `{"status":"ok","service":"seguimiento-trabajos"}`. Detener con Ctrl+C. Liveness acredita que el proceso responde. `/health/ready` devuelve 503 en este modo técnico; sin DB configurada, el GET de trabajos devuelve 503.
 
 ## Configuración
 
@@ -136,7 +136,7 @@ Para reproducir orden adverso, cortes de proceso, fan-out, concurrencia, corrupc
 uv run --locked pytest tests/integracion/test_pulsar.py -q --tb=short
 ```
 
-El harness publica contratos V1, usa barreras para demorar creación y procesos que se terminan con SIGKILL antes/después del commit. No es un endpoint empresarial ni un worker desplegado por separado. La vista se consulta en SQL desde sesiones nuevas; los GET empresariales permanecen pendientes.
+El harness publica contratos V1, usa barreras para demorar creación y procesos que se terminan con SIGKILL antes/después del commit. No es un endpoint empresarial ni un worker desplegado por separado. La vista se consulta en SQL desde sesiones nuevas; el harness también verifica el GET empresarial por HTTP real.
 
 ## Verificación local
 
@@ -174,3 +174,33 @@ La suite completa crea bases `seguimiento_test_<uuid>`, migra desde vacío y las
 - [Procedencia y copias de referencia](docs/referencias/README.md).
 
 Los documentos comunes se incluyen en el repositorio para trabajar sin carpetas hermanas. Las referencias de Entrada son documentación y contratos del productor; no son una dependencia Python. Las fuentes originales del equipo se conservan en entrega4.
+
+## Consulta de seguimiento V1
+
+Con la aplicación operativa iniciada mediante los comandos anteriores, consultar un ID recibido:
+
+```bash
+curl --fail --silent --show-error \
+  http://127.0.0.1:8003/seguimiento/trabajos/00000000-0000-0000-0000-000000000001
+```
+
+El ID mostrado pertenece a los ejemplos de contrato; solo devuelve 200 si se publicaron y consumieron esos eventos. Un trabajo sin fragmentos devuelve 404 («No disponible en la proyeccion»); puede ser retraso de consumo. ID inválido → 422; base no configurada o inaccesible → 503.
+
+La respuesta contiene las cuatro identidades, estado, `creacion_recibida`, referencia, categoría/red, cotización/proveedor, importe/moneda o motivo y `proyectada_en`. Datos desconocidos son null. `importe_menor` conserva unidades menores enteras: 15.000.000 representa COP 150.000,00 en el laboratorio. La fecha local está en UTC y no cambia al consultar.
+
+Una propuesta o rechazo puede consultarse antes de recibir creación. La creación posterior completa la vista y conserva el resultado. El estado muestra hechos recibidos, no confirma que Orquestación ya los haya aplicado.
+
+La lectura usa una sesión propia y un SELECT sin bloqueo de actualización, sobre la tabla existente. `RespuestaSeguimiento` pertenece a aplicación, el puerto y handler solo consultan y el mapeador convierte los fragmentos persistidos. `PersistenciaNoDisponible` es el error común del seedwork; SQL traduce errores conocidos y HTTP los presenta como 503. No se modifican inbox, fechas ni fragmentos.
+
+La API puede consultar con DB y consumo desactivado; readiness seguirá en 503 según el estado de procesamiento. OpenAPI está en `/openapi.json` y la documentación interactiva en `/docs`. El alcance es un GET por ID, sin listado, filtros ni paginación.
+
+Para reproducir la demostración con PostgreSQL y Pulsar disponibles:
+
+```bash
+uv run --locked pytest tests/api/test_seguimiento.py tests/integracion/test_consulta.py -q
+uv run --locked pytest tests/integracion/test_pulsar.py -k http_real -q
+```
+
+La segunda prueba inicia Uvicorn y publica contratos V1 en tópicos aislados: verifica por HTTP una vista parcial, publica creación y comprueba su completitud, para propuesta y rechazo. No publica en tópicos empresariales ni acredita productores propietarios.
+
+[Plan 06](docs/plans/06-consultas-lector-v2.md) · [Evidencia de consulta V1](docs/evidencias/06-consultas-v1.md).
