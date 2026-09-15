@@ -66,6 +66,7 @@ def test_get_returns_known_fields_and_explicit_nulls(
         "moneda": "COP" if has_offer else None,
         "motivo": "SIN_OFERTA_PARA_CATEGORIA" if result and result.motivo else None,
         "proyectada_en": "2026-09-12T00:00:00Z",
+        "duracion_estimada_minutos": None,
     }
     repository.obtener.assert_called_once_with(identidad().id_trabajo)
 

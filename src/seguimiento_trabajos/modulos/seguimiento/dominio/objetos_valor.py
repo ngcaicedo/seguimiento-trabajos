@@ -120,8 +120,11 @@ class DatosResultadoCotizacion:
     categoria: str | None = None
     tipo_red: TipoRed | None = None
     motivo: MotivoRechazo | None = None
+    duracion_estimada_minutos: int | None = None
 
     def __post_init__(self) -> None:
+        if self.duracion_estimada_minutos is not None:
+            validar_entero_positivo(self.duracion_estimada_minutos)
         validar_entero_positivo(self.version_catalogo)
         validar_entero_positivo(self.version_cotizacion)
         if self.version_cotizacion != 1:
@@ -149,6 +152,7 @@ class DatosResultadoCotizacion:
                     self.moneda,
                     self.categoria,
                     self.tipo_red,
+                    self.duracion_estimada_minutos,
                 )
             ):
                 raise DatosInvalidos("Rechazo requiere motivo y ausencia de oferta")

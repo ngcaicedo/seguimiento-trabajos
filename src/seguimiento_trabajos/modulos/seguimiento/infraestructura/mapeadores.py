@@ -63,4 +63,5 @@ def cargar_respuesta(fila: VistaSeguimientoSQL) -> RespuestaSeguimiento:
         moneda=resultado.moneda if resultado else None,
         motivo=resultado.motivo if resultado else None,
         proyectada_en=fila.proyectada_en,
+        duracion_estimada_minutos=resultado.duracion_estimada_minutos if resultado else None,
     )

@@ -70,6 +70,11 @@ def leer_evento(
                 id_cotizacion=identidad(datos, "id_cotizacion"),
                 id_proveedor=identidad(datos, "id_proveedor"),
                 importe_menor=entero(datos, "importe_menor"),
+                duracion_estimada_minutos=(
+                    entero(datos, "duracion_estimada_minutos")
+                    if datos.get("duracion_estimada_minutos") is not None
+                    else None
+                ),
                 moneda=texto(datos, "moneda"),
                 categoria=texto(datos, "categoria"),
                 tipo_red=TipoRed(texto(datos, "tipo_red")),

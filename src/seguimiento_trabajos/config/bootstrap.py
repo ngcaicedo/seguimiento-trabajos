@@ -9,6 +9,9 @@ from seguimiento_trabajos.modulos.seguimiento.aplicacion.handlers.consultar_segu
 if TYPE_CHECKING:
     from seguimiento_trabajos.config.database import Database
     from seguimiento_trabajos.config.settings import Settings
+    from seguimiento_trabajos.modulos.seguimiento.aplicacion.handlers.listar_seguimiento import (
+        ListarSeguimientoHandler,
+    )
     from seguimiento_trabajos.seedwork.infraestructura.consumidor_pulsar import ConsumidorPulsar
 
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.handlers.proyectar_creacion import (
@@ -52,7 +55,7 @@ def componer_consumidores(base: "Database", settings: "Settings") -> list["Consu
         clasificar_error,
         procesador,
     )
-    from seguimiento_trabajos.modulos.seguimiento.infraestructura.esquemas.v1.eventos import (
+    from seguimiento_trabajos.modulos.seguimiento.infraestructura.esquemas.v2.eventos import (
         esquemas,
     )
     from seguimiento_trabajos.seedwork.infraestructura.consumidor_pulsar import ConsumidorPulsar
@@ -83,3 +86,14 @@ def componer_consulta(base: "Database") -> ConsultarSeguimientoHandler:
     )
 
     return ConsultarSeguimientoHandler(RepositorioLecturaSeguimientoSQL(base.session_factory))
+
+
+def componer_listado(base: "Database") -> "ListarSeguimientoHandler":
+    from seguimiento_trabajos.modulos.seguimiento.aplicacion.handlers.listar_seguimiento import (
+        ListarSeguimientoHandler,
+    )
+    from seguimiento_trabajos.modulos.seguimiento.infraestructura.repositorios import (
+        RepositorioLecturaSeguimientoSQL,
+    )
+
+    return ListarSeguimientoHandler(RepositorioLecturaSeguimientoSQL(base.session_factory))

@@ -22,7 +22,14 @@ from seguimiento_trabajos.seedwork.infraestructura.serializacion import (
 
 
 def guardar_fragmento(fragmento: DatosCreacion | DatosResultadoCotizacion) -> Documento:
-    return normalizar_documento({"version_formato": 1, "fragmento": asdict(fragmento)})
+    datos = asdict(fragmento)
+    # Preserve the canonical inbox document of historical events with unknown duration.
+    if (
+        isinstance(fragmento, DatosResultadoCotizacion)
+        and fragmento.duracion_estimada_minutos is None
+    ):
+        datos.pop("duracion_estimada_minutos")
+    return normalizar_documento({"version_formato": 1, "fragmento": datos})
 
 
 def cargar_fragmento(documento: Documento) -> DatosCreacion | DatosResultadoCotizacion:

@@ -26,3 +26,4 @@ class RespuestaSeguimiento:
     moneda: str | None
     motivo: MotivoRechazo | None
     proyectada_en: datetime
+    duracion_estimada_minutos: int | None = None

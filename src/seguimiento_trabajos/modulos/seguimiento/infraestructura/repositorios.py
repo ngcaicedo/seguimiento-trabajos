@@ -78,3 +78,21 @@ class RepositorioLecturaSeguimientoSQL:
                 return cargar_respuesta(fila) if fila is not None else None
         except (OperationalError, TimeoutError) as error:
             raise PersistenciaNoDisponible("Persistencia no disponible") from error
+
+    def listar(
+        self, duracion_maxima_minutos: int | None, limite: int
+    ) -> list[RespuestaSeguimiento]:
+        consulta = select(VistaSeguimientoSQL)
+        if duracion_maxima_minutos is not None:
+            duracion = VistaSeguimientoSQL.fragmento_resultado["fragmento"][
+                "duracion_estimada_minutos"
+            ].as_integer()
+            consulta = consulta.where(duracion <= duracion_maxima_minutos)
+        consulta = consulta.order_by(
+            VistaSeguimientoSQL.primera_recepcion_en.desc(), VistaSeguimientoSQL.id_trabajo
+        ).limit(limite)
+        try:
+            with self.crear_sesion() as sesion:
+                return [cargar_respuesta(fila) for fila in sesion.scalars(consulta)]
+        except (OperationalError, TimeoutError) as error:
+            raise PersistenciaNoDisponible("Persistencia no disponible") from error

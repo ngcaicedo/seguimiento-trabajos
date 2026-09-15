@@ -204,3 +204,12 @@ uv run --locked pytest tests/integracion/test_pulsar.py -k http_real -q
 La segunda prueba inicia Uvicorn y publica contratos V1 en tópicos aislados: verifica por HTTP una vista parcial, publica creación y comprueba su completitud, para propuesta y rechazo. No publica en tópicos empresariales ni acredita productores propietarios.
 
 [Plan 06](docs/plans/06-consultas-lector-v2.md) · [Evidencia de consulta V1](docs/evidencias/06-consultas-v1.md).
+
+## Evolución E3: duración de cotización
+
+La revisión 2 de `CotizacionRegistrada.v1` añade `duracion_estimada_minutos` opcional al mismo tópico y fullname. El lector efectivo usa `esquemas/v2/eventos.py`; el contrato v1 permanece congelado. Se conserva la duración en el fragmento JSONB existente, sin DDL ni reescritura de históricos. Ausente o null significa desconocida. Los documentos históricos sin duración mantienen su representación canónica para que una reentrega no entre en conflicto con el inbox.
+
+`GET /seguimiento/trabajos/{id_trabajo}` expone la duración.
+`GET /seguimiento/trabajos?duracion_maxima_minutos=60&limite=100` lista hasta 100 vistas, excluyendo duración desconocida y valores superiores al máximo. Sin filtro se incluyen todas; el orden es primera recepción descendente e ID de trabajo. La consulta usa solo la proyección de Seguimiento.
+
+Validación: 310 pruebas, Ruff, formato, mypy y wheel; integración de cuatro servicios 28/28. La evidencia experimental de GCP se entrega separadamente en `output/entrega4-escenarios/`.
