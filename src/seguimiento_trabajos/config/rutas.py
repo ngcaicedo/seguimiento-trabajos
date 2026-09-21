@@ -32,3 +32,34 @@ def fuentes(settings: Settings) -> tuple[Fuente, ...]:
             "seguimiento-cotizacion-rechazada-v1",
         ),
     )
+
+
+def saga_sources(settings: Settings) -> tuple[Fuente, ...]:
+    return (
+        Fuente(
+            "abrir-seguimiento-trabajo",
+            "AbrirSeguimientoTrabajo.v1",
+            settings.topico_apertura,
+            "seguimiento-apertura-v1",
+        ),
+        Fuente(
+            "cancelar-seguimiento-trabajo",
+            "CancelarSeguimientoTrabajo.v1",
+            settings.topico_cancelacion,
+            "seguimiento-cancelacion-v1",
+        ),
+        Fuente(
+            "trabajo-cancelado",
+            "TrabajoCancelado.v1",
+            settings.topico_trabajo_cancelado,
+            "seguimiento-trabajo-cancelado-v1",
+        ),
+    )
+
+
+def reply_topics(settings: Settings) -> dict[str, str]:
+    return {
+        "SeguimientoTrabajoAbierto.v1": settings.topico_abierto,
+        "AperturaSeguimientoFallida.v1": settings.topico_apertura_fallida,
+        "SeguimientoTrabajoCancelado.v1": settings.topico_cancelado,
+    }

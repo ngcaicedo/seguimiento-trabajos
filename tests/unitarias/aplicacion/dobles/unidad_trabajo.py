@@ -7,11 +7,18 @@ from types import TracebackType
 from typing import Self
 from uuid import UUID
 
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.messages import (
+    TrackingInput,
+    TrackingReply,
+)
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.metadatos import MetadatosProyeccion
 from seguimiento_trabajos.modulos.seguimiento.dominio.excepciones import ConflictoFragmentos
 from seguimiento_trabajos.modulos.seguimiento.dominio.objetos_valor import (
     DatosCreacion,
     DatosResultadoCotizacion,
+)
+from seguimiento_trabajos.modulos.seguimiento.dominio.operational_tracking import (
+    OperationalTracking,
 )
 from seguimiento_trabajos.modulos.seguimiento.dominio.vistas import VistaSeguimiento
 from seguimiento_trabajos.seedwork.aplicacion.excepciones import ConflictoMensaje
@@ -19,6 +26,9 @@ from seguimiento_trabajos.seedwork.aplicacion.excepciones import ConflictoMensaj
 
 @dataclass
 class EstadoMemoria:
+    operational: dict[UUID, OperationalTracking] = field(default_factory=dict)
+    replies: list[TrackingReply] = field(default_factory=list)
+    saga_inbox: dict[UUID, TrackingInput] = field(default_factory=dict)
     vistas: dict[UUID, VistaSeguimiento] = field(default_factory=dict)
     entradas: dict[tuple[str, UUID], DatosCreacion | DatosResultadoCotizacion] = field(
         default_factory=dict
@@ -137,3 +147,29 @@ class UnidadTrabajoMemoria:
     def revertir(self) -> None:
         self._estado = EstadoMemoria()
         self._activa = False
+
+    @property
+    def operational(self) -> UnidadTrabajoMemoria:
+        return self
+
+    def get(self, work_id: UUID) -> OperationalTracking | None:
+        return self.estado_activo().operational.get(work_id)
+
+    def save(self, tracking: OperationalTracking) -> None:
+        self.estado_activo().operational[tracking.identity.work_id] = tracking
+        self.verificar_fallo("guardar")
+
+    def prepare_message(self, message: TrackingInput) -> bool:
+        state = self.estado_activo()
+        previous = state.saga_inbox.get(message.message_id)
+        if previous is not None:
+            if previous != message:
+                raise ConflictoMensaje("Mismo mensaje con contenido diferente")
+            return False
+        state.saga_inbox[message.message_id] = message
+        self.verificar_fallo("inbox")
+        return True
+
+    def record_reply(self, reply: TrackingReply) -> None:
+        self.estado_activo().replies.append(reply)
+        self.verificar_fallo("outbox")

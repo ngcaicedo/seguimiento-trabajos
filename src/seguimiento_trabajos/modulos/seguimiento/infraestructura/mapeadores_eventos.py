@@ -1,5 +1,15 @@
 from typing import Any
 
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.messages import (
+    CancelTracking,
+    OpeningFailed,
+    OpenTracking,
+    TrackingCancelled,
+    TrackingInput,
+    TrackingOpened,
+    TrackingReply,
+    WorkCancelled,
+)
 from seguimiento_trabajos.modulos.seguimiento.dominio.objetos_valor import (
     DatosCreacion,
     DatosResultadoCotizacion,
@@ -10,10 +20,16 @@ from seguimiento_trabajos.modulos.seguimiento.dominio.objetos_valor import (
     TipoRed,
     TipoSolicitud,
 )
+from seguimiento_trabajos.modulos.seguimiento.dominio.operational_tracking import (
+    TrackingIdentity,
+    WorkCancellation,
+)
 from seguimiento_trabajos.seedwork.infraestructura.serializacion import (
+    Documento,
     entero,
     identidad,
     instante,
+    normalizar_documento,
     texto,
 )
 
@@ -91,4 +107,96 @@ def leer_evento(
         event_id = datos.get("event_id")
         raise MensajeInvalido(
             str(error), event_id if isinstance(event_id, str) else None
+        ) from error
+
+
+def saga_document(message: TrackingInput | TrackingReply) -> Documento:
+    identity = message.identity
+    document: dict[str, object] = {
+        "command_id"
+        if isinstance(message, (OpenTracking, CancelTracking))
+        else "event_id": message.message_id,
+        "tipo": message.contract,
+        "version_contrato": 1,
+        "instante": message.occurred_at,
+        "correlacion": identity.request_id,
+        "causacion": message.causation,
+        "id_saga": identity.saga_id,
+        "id_solicitud": identity.request_id,
+        "id_trabajo": identity.work_id,
+        "id_partner": identity.partner_id,
+    }
+    if isinstance(message, OpenTracking):
+        document["id_cotizacion"] = message.quote_id
+    elif isinstance(message, (CancelTracking, OpeningFailed)):
+        document.update(codigo_motivo=message.reason, detalle=message.detail)
+    elif isinstance(message, WorkCancelled):
+        document.update(
+            codigo_motivo=message.fact.reason,
+            detalle=message.fact.detail,
+            cancelado_en=message.fact.cancelled_at,
+            version_trabajo=message.fact.work_version,
+        )
+    elif isinstance(message, TrackingOpened):
+        document.update(id_seguimiento=message.tracking_id, abierto_en=message.opened_at)
+    elif isinstance(message, TrackingCancelled):
+        document.update(id_seguimiento=message.tracking_id, cancelado_en=message.cancelled_at)
+    return normalizar_documento(document)
+
+
+def read_saga_message(record: Any, expected_type: str, key: str) -> TrackingInput:
+    data = record if isinstance(record, dict) else vars(record)
+    try:
+        if texto(data, "tipo") != expected_type or texto(data, "id_trabajo") != key:
+            raise ValueError("Topico, tipo o clave incoherentes")
+        if entero(data, "version_contrato") != 1:
+            raise ValueError("Version de contrato no soportada")
+        message_identity = TrackingIdentity(
+            identidad(data, "id_trabajo"),
+            identidad(data, "id_solicitud"),
+            identidad(data, "id_partner"),
+            identidad(data, "id_saga"),
+        )
+        if identidad(data, "correlacion") != message_identity.request_id:
+            raise ValueError("Correlacion distinta de solicitud")
+        message_id = identidad(
+            data, "event_id" if expected_type == WorkCancelled.contract else "command_id"
+        )
+        occurred_at = instante(data, "instante")
+        causation = identidad(data, "causacion")
+        if expected_type == OpenTracking.contract:
+            return OpenTracking(
+                message_id=message_id,
+                identity=message_identity,
+                occurred_at=occurred_at,
+                causation=causation,
+                quote_id=identidad(data, "id_cotizacion"),
+            )
+        if expected_type == CancelTracking.contract:
+            return CancelTracking(
+                message_id=message_id,
+                identity=message_identity,
+                occurred_at=occurred_at,
+                causation=causation,
+                reason=texto(data, "codigo_motivo"),
+                detail=texto(data, "detalle"),
+            )
+        if expected_type == WorkCancelled.contract:
+            return WorkCancelled(
+                message_id=message_id,
+                identity=message_identity,
+                occurred_at=occurred_at,
+                causation=causation,
+                fact=WorkCancellation(
+                    texto(data, "codigo_motivo"),
+                    texto(data, "detalle"),
+                    instante(data, "cancelado_en"),
+                    entero(data, "version_trabajo"),
+                ),
+            )
+        raise ValueError("Tipo de mensaje no soportado")
+    except (ValueError, TypeError, KeyError) as error:
+        identifier = data.get("command_id", data.get("event_id"))
+        raise MensajeInvalido(
+            str(error), identifier if isinstance(identifier, str) else None
         ) from error

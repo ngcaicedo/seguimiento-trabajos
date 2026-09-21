@@ -59,3 +59,23 @@ with (
         check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_onion_dependency_direction() -> None:
+    import ast
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2] / "src/seguimiento_trabajos/modulos/seguimiento"
+    for layer in ("dominio", "aplicacion"):
+        forbidden = ("infraestructura", "config", "api") + (
+            ("aplicacion",) if layer == "dominio" else ()
+        )
+        for path in (root / layer).rglob("*.py"):
+            for node in ast.walk(ast.parse(path.read_text())):
+                modules = []
+                if isinstance(node, ast.ImportFrom) and node.module:
+                    modules = [node.module]
+                elif isinstance(node, ast.Import):
+                    modules = [alias.name for alias in node.names]
+                for module in modules:
+                    assert not any(part in module.split(".") for part in forbidden), (path, module)

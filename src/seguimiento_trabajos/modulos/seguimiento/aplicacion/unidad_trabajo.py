@@ -1,12 +1,19 @@
 from typing import Protocol
 from uuid import UUID
 
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.messages import (
+    TrackingInput,
+    TrackingReply,
+)
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.metadatos import MetadatosProyeccion
 from seguimiento_trabajos.modulos.seguimiento.dominio.objetos_valor import (
     DatosCreacion,
     DatosResultadoCotizacion,
 )
-from seguimiento_trabajos.modulos.seguimiento.dominio.repositorios import RepositorioSeguimiento
+from seguimiento_trabajos.modulos.seguimiento.dominio.repositorios import (
+    OperationalRepository,
+    RepositorioSeguimiento,
+)
 from seguimiento_trabajos.seedwork.aplicacion.unidad_trabajo import UnidadTrabajo
 
 
@@ -21,3 +28,10 @@ class UnidadTrabajoSeguimiento(UnidadTrabajo, Protocol):
     def obtener_metadatos(self, id_trabajo: UUID) -> MetadatosProyeccion | None: ...
 
     def guardar_metadatos(self, id_trabajo: UUID, metadatos: MetadatosProyeccion) -> None: ...
+
+    @property
+    def operational(self) -> OperationalRepository: ...
+
+    def prepare_message(self, message: TrackingInput) -> bool: ...
+
+    def record_reply(self, reply: TrackingReply) -> None: ...

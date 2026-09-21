@@ -85,7 +85,7 @@ from unittest.mock import Mock
 base_prueba = create_database('postgresql+psycopg://test@127.0.0.1:1/test')
 try:
     consumidores = componer_consumidores(base_prueba, Settings())
-    assert len(consumidores) == 3 and len(esquemas()) == 3
+    assert len(consumidores) == 6 and len(esquemas()) == 3
     assert all(consumidor._cliente is None for consumidor in consumidores)
     cliente = Mock()
     efecto = Mock()
@@ -99,7 +99,7 @@ try:
     consumidor.cerrar()
 finally:
     base_prueba.close()
-assert set(metadata.tables) == {'inbox', 'seguimiento_trabajos'}
+assert set(metadata.tables) == {'inbox', 'seguimiento_trabajos', 'seguimiento_operativo', 'outbox'}
 assert all(callable(component) for component in (
     crear_uow, componer_seguimiento_sql, guardar_fragmento, cargar_fragmento,
     UnidadTrabajoSeguimientoSQL,

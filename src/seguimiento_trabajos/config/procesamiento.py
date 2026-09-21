@@ -7,7 +7,7 @@ from typing import Any
 
 from sqlalchemy import text
 
-from seguimiento_trabajos.config.bootstrap import componer_consumidores
+from seguimiento_trabajos.config.bootstrap import componer_consumidores, compose_outbox
 from seguimiento_trabajos.config.database import Database
 from seguimiento_trabajos.config.settings import Settings
 from seguimiento_trabajos.seedwork.infraestructura.ciclos import Ciclo
@@ -20,6 +20,7 @@ class Procesamiento:
     base: Database
     ciclos: list[Ciclo] = field(default_factory=list)
     cerrando: bool = False
+    expected_components: set[str] = field(default_factory=set)
 
     def salud(self) -> dict[str, Any]:
         fuentes = {ciclo.nombre: ciclo.estado() for ciclo in self.ciclos}
@@ -33,7 +34,8 @@ class Procesamiento:
         listo = (
             not self.cerrando
             and database_ok
-            and len(fuentes) == 3
+            and bool(self.expected_components)
+            and set(fuentes) == self.expected_components
             and all(estado["estado"] == "operativo" for estado in fuentes.values())
         )
         return {
@@ -67,6 +69,9 @@ async def procesar_eventos(
     procesamiento = Procesamiento(base)
     try:
         consumidores = await asyncio.to_thread(componer_consumidores, base, settings)
+        procesamiento.expected_components = {consumer.suscripcion for consumer in consumidores} | {
+            "seguimiento-outbox"
+        }
         for consumidor in consumidores:
             ciclo = Ciclo(
                 consumidor.suscripcion,
@@ -76,6 +81,9 @@ async def procesar_eventos(
             )
             ciclo.iniciar()
             procesamiento.ciclos.append(ciclo)
+        outbox = compose_outbox(base, settings)
+        outbox.iniciar()
+        procesamiento.ciclos.append(outbox)
         yield procesamiento
     finally:
         procesamiento.cerrando = True

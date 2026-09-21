@@ -77,6 +77,14 @@ flujo.proyectar_resultado(DatosResultadoCotizacion(
     estado=EstadoProyeccion.COTIZACION_RECHAZADA, version_catalogo=1,
     version_cotizacion=1, motivo=MotivoRechazo.SIN_OFERTA_PARA_CATEGORIA,
 ))
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.handlers.open_tracking import (
+    OpenTrackingHandler,
+)
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.handlers.cancel_tracking import (
+    CancelTrackingHandler,
+)
+from seguimiento_trabajos.modulos.seguimiento.aplicacion import messages
+assert OpenTrackingHandler and CancelTrackingHandler and messages.OpenTracking
 assert len(unidades) == 2
 assert all(unidad.confirmada for unidad in unidades)
 """

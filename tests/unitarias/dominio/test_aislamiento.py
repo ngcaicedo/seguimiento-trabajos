@@ -24,6 +24,13 @@ sys.meta_path.insert(0, Bloqueo())
 from seguimiento_trabajos.modulos.seguimiento.dominio.vistas import VistaSeguimiento
 from seguimiento_trabajos.modulos.seguimiento.dominio.servicios import combinar
 from seguimiento_trabajos.seedwork.dominio.excepciones import DatosInvalidos
+from seguimiento_trabajos.modulos.seguimiento.dominio.operational_tracking import (
+    OperationalTracking, TrackingIdentity,
+)
+from uuid import uuid4
+from datetime import datetime, UTC
+operational = OperationalTracking(TrackingIdentity(uuid4(), uuid4(), uuid4(), uuid4()))
+assert operational.cancel(datetime.now(UTC)).state == 'CANCELADO'
 assert callable(combinar)
 try:
     VistaSeguimiento()

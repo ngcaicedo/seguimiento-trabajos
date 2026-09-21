@@ -1,7 +1,10 @@
 from typing import Protocol
 from uuid import UUID
 
-from seguimiento_trabajos.modulos.seguimiento.aplicacion.vistas import RespuestaSeguimiento
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.vistas import (
+    AttentionView,
+    RespuestaSeguimiento,
+)
 
 
 class RepositorioLecturaSeguimiento(Protocol):
@@ -12,3 +15,7 @@ class RepositorioListadoSeguimiento(Protocol):
     def listar(
         self, duracion_maxima_minutos: int | None, limite: int
     ) -> list[RespuestaSeguimiento]: ...
+
+
+class AttentionReader(Protocol):
+    def get_attention(self, work_id: UUID) -> AttentionView | None: ...

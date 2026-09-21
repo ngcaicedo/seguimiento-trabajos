@@ -67,8 +67,10 @@ class Ciclo:
         try:
             while not self.parada.is_set():
                 try:
-                    self.paso()
+                    processed = self.paso()
                     self._actualizar("operativo")
+                    if not processed:
+                        self.parada.wait(self.pausa)
                 except FalloPaso as error:
                     pausado = error.accion == AccionError.PAUSAR
                     self._actualizar("pausado" if pausado else "recuperando", error.diagnostico)

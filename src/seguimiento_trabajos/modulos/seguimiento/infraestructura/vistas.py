@@ -36,3 +36,40 @@ class VistaSeguimientoSQL(BaseSQL):
     creado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     primera_recepcion_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     proyectada_en: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class OperationalTrackingSQL(BaseSQL):
+    __tablename__ = "seguimiento_operativo"
+    __table_args__ = (
+        PrimaryKeyConstraint("id_trabajo", name="pk_seguimiento_operativo"),
+        UniqueConstraint("id_seguimiento", name="uq_seguimiento_operativo_id"),
+        CheckConstraint(
+            "estado IS NULL OR estado IN ('ABIERTO', 'CANCELADO')", name="ck_operativo_estado"
+        ),
+        CheckConstraint(
+            "((estado = 'CANCELADO') IS TRUE) = (cancelado_en IS NOT NULL)",
+            name="ck_operativo_cancelacion",
+        ),
+        CheckConstraint(
+            "(id_seguimiento IS NULL) = (abierto_en IS NULL) "
+            "AND (id_cotizacion IS NULL) = (abierto_en IS NULL)",
+            name="ck_operativo_apertura",
+        ),
+        CheckConstraint(
+            "estado IS DISTINCT FROM 'ABIERTO' OR abierto_en IS NOT NULL",
+            name="ck_operativo_abierto",
+        ),
+        CheckConstraint(
+            "abierto_en IS NULL OR estado IS NOT NULL", name="ck_operativo_apertura_estado"
+        ),
+    )
+    id_trabajo: Mapped[UUID] = mapped_column(primary_key=True)
+    id_solicitud: Mapped[UUID]
+    id_partner: Mapped[UUID]
+    id_saga: Mapped[UUID]
+    estado: Mapped[str | None]
+    id_seguimiento: Mapped[UUID | None]
+    id_cotizacion: Mapped[UUID | None]
+    abierto_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancelado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancelacion_trabajo: Mapped[Documento | None] = mapped_column(JSONB(none_as_null=True))

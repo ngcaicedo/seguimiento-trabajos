@@ -1,8 +1,8 @@
 # Seguimiento de Trabajos
 
-Planes 01–06 implementados: base FastAPI, modelo, persistencia PostgreSQL, tres consumidores Pulsar V1 y consulta por ID. El cierre grupal con productores propietarios sigue pendiente; los schemas y productores de prueba se identifican en [contratos](docs/contratos/README.md).
+POC E5 implementada sobre E4/E3: proyección de trabajos, apertura/cancelación operativa, inbox/outbox y consultas HTTP. Seguimiento es participante; el coordinador y Saga Log pertenecen a Orquestación. La integración E5 con los otros servicios queda fuera de esta implementación local. Ver [contratos](docs/contratos/README.md) y [estructura y validación E5](docs/plans/09-seguimiento-participante-saga.md).
 
-El modelo puro combina TrabajoCreado y los resultados de Cotizaciones en una vista inmutable. Los casos de uso coordinan proyección, inbox y metadatos mediante una UoW comprobada con dobles y PostgreSQL real. El modo operativo inicia tres hilos de consumo desde lifespan; el GET por ID consulta los datos confirmados de la proyección. El modo técnico no inicia consumo; puede consultar si tiene DB configurada.
+El modelo puro combina TrabajoCreado y los resultados de Cotizaciones en una vista inmutable. Los casos de uso coordinan proyección, inbox y metadatos mediante una UoW comprobada con dobles y PostgreSQL real. El modo operativo inicia seis consumidores y un ciclo de despacho outbox desde lifespan; el GET por ID consulta los datos confirmados de la proyección. El modo técnico no inicia consumo; puede consultar si tiene DB configurada.
 
 ## Instalación y ejecución
 
@@ -58,7 +58,7 @@ docs/evidencias/
 docs/referencias/
 ```
 
-El módulo separa datos y enumeraciones en `dominio/objetos_valor.py`, `VistaSeguimiento` en `dominio/vistas.py` y combinación pura en `dominio/servicios.py`. Seedwork contiene validaciones de UUID, enteros positivos, texto y fechas UTC, y la excepción común DatosInvalidos. Identidad, procedencia, creación y resultado utilizan esas validaciones; las reglas específicas permanecen en el módulo. La factoría recibe configuración, factoría de base y ciclo de procesamiento sustituibles. El ciclo predeterminado respeta el modo técnico u operativo configurado. `config/bootstrap.py` compone los dos handlers con una factoría de UoW y reloj explícitos; ofrece composición con puertos o adaptadores SQL; no abre conexiones ni inicia procesamiento al construirlos. El seedwork incorpora `consumidor_pulsar.py`, `ciclos.py` y `reloj.py`; el módulo aporta schemas, mapeadores y procesamiento específico. No hay bus ni outbox.
+El módulo separa datos y enumeraciones en `dominio/objetos_valor.py`, `VistaSeguimiento` en `dominio/vistas.py` y combinación pura en `dominio/servicios.py`. Seedwork contiene validaciones de UUID, enteros positivos, texto y fechas UTC, y la excepción común DatosInvalidos. Identidad, procedencia, creación y resultado utilizan esas validaciones; las reglas específicas permanecen en el módulo. La factoría recibe configuración, factoría de base y ciclo de procesamiento sustituibles. El ciclo predeterminado respeta el modo técnico u operativo configurado. `config/bootstrap.py` compone los dos handlers con una factoría de UoW y reloj explícitos; ofrece composición con puertos o adaptadores SQL; no abre conexiones ni inicia procesamiento al construirlos. El seedwork incorpora `consumidor_pulsar.py`, `ciclos.py` y `reloj.py`; el módulo aporta schemas, mapeadores y procesamiento específico. No hay bus interno. E5 añade un outbox en la infraestructura del módulo y amplía la UoW existente.
 
 ## Modelo de seguimiento
 
@@ -78,7 +78,7 @@ Las cuatro identidades deben coincidir. Creación y propuesta también deben coi
 
 Cada fragmento conserva procedencia. Mismo ID con contenido distinto es conflicto; nuevo ID con hecho equivalente conserva el fragmento original. Los productores deben mantener el ID original al reenviar: la segunda regla es defensiva. El modelo solo compara los fragmentos disponibles; los casos de uso añaden la comparación histórica del inbox, comprobada con dobles y con un inbox SQL durable. Dos fragmentos cargados tampoco pueden reutilizar un mismo event_id para hechos diferentes.
 
-La revisión compatible de una propuesta no es una nueva versión de cotización ni un criterio para sobrescribir. El modelo acepta datos conocidos traducidos de una revisión posterior y conserva su procedencia; el alcance de transporte verificado es V1 y no usa duración. La combinación no compara relojes entre servicios y no calcula fechas locales de proyección. Las fechas de origen se normalizan a UTC.
+La revisión compatible de una propuesta no es una nueva versión de cotización ni un criterio para sobrescribir. El modelo acepta datos conocidos traducidos de una revisión posterior y conserva su procedencia; el lector actual incorpora la duración opcional de la evolución E3. La combinación no compara relojes entre servicios y no calcula fechas locales de proyección. Las fechas de origen se normalizan a UTC.
 
 Estos estados indican hechos recibidos. `COTIZACION_REGISTRADA` no confirma que Orquestación haya aplicado el resultado. Seguimiento no reevalúa catálogo/homologación ni puede verificar toda la cadena causal con los datos disponibles. La POC admite una sola petición por trabajo y no permite recotización.
 
@@ -110,7 +110,7 @@ La gestión común está en el seedwork: contrato `UnidadTrabajo`, base `UnidadT
 
 Cada UoW usa Session propia, aislamiento `READ COMMITTED` y flush explícito al confirmar, cuando vista y metadatos ya están completos. El repositorio bloquea la fila existente antes de combinar. Si dos operaciones insertan por primera vez, las restricciones identificadas permiten hasta tres intentos completos con UoW nueva, incluido inbox. Petición asociada a otro trabajo o contenido contradictorio termina en error.
 
-El inbox usa `seguimiento.proyeccion` y conserva todos los mensajes aceptados, incluidos IDs equivalentes que no modifican la vista. Nada publica mensajes ni consulta a productores. Los consumidores del plan 05 invocan estos handlers desde lifespan.
+El inbox usa `seguimiento.proyeccion` y conserva todos los mensajes aceptados, incluidos IDs equivalentes que no modifican la vista. Estos handlers de proyección no publican mensajes ni consultan a productores; los nuevos handlers operativos registran respuestas en outbox. Los consumidores del plan 05 invocan estos handlers desde lifespan.
 
 ## Consumo Pulsar V1
 
@@ -124,9 +124,9 @@ uv run --locked python scripts/preparar_pulsar.py
 uv run --locked uvicorn seguimiento_trabajos.api.app:create_app --factory --host 127.0.0.1 --port 8003
 ```
 
-El script registra los schemas provisionales documentados y prepara las suscripciones antes del tráfico. Con contratos de propietarios disponibles, cotejarlos antes de usar sus tópicos compartidos. Repetir preparación no mueve cursores. Los nombres de suscripción están centralizados en `config/rutas.py`; las réplicas comparten los mismos nombres.
+El script registra los schemas documentados y prepara las seis suscripciones y los tópicos de respuesta antes del tráfico. Con contratos de propietarios disponibles, cotejarlos antes de usar sus tópicos compartidos. Repetir preparación no mueve cursores. Los nombres de suscripción están centralizados en `config/rutas.py`; las réplicas comparten los mismos nombres.
 
-Consultar `curl --fail http://127.0.0.1:8003/health/ready` desde otra terminal. Readiness es 200 cuando DB y las tres fuentes están operativas; 503 en modo técnico, recuperación, pausa o cierre. El timeout sin mensajes es normal. Un conflicto/Avro inválido conserva el mensaje sin ACK, pausa su fuente y muestra diagnóstico; liveness permanece disponible. Corregir la causa y reiniciar el servicio completo; con réplicas, detener la corrida inválida para evitar rotación del mensaje.
+Consultar `curl --fail http://127.0.0.1:8003/health/ready` desde otra terminal. Readiness es 200 cuando DB, los seis consumidores y el publicador outbox están operativos; 503 en modo técnico, recuperación, pausa o cierre. El timeout sin mensajes es normal. Un conflicto/Avro inválido conserva el mensaje sin ACK, pausa su fuente y muestra diagnóstico; liveness permanece disponible. Corregir la causa y reiniciar el servicio completo; con réplicas, detener la corrida inválida para evitar rotación del mensaje.
 
 Detener con Ctrl+C o SIGTERM. El presupuesto compartido de cierre es 9 s; recepción predeterminada 500 ms, conexión/operaciones Pulsar 1 s. La factoría SQL utiliza pool timeout 1 s, conexión 2 s, `statement_timeout=1000`, `lock_timeout=500`, `transaction_timeout=2000` y `tcp_user_timeout=2000` ms. Son límites del laboratorio PostgreSQL 17; no configuran otros servidores. La parada espera a los hilos antes de liberar Engine. No se borra la DB ni se usa `unsubscribe` durante recuperación.
 
@@ -213,3 +213,77 @@ La revisión 2 de `CotizacionRegistrada.v1` añade `duracion_estimada_minutos` o
 `GET /seguimiento/trabajos?duracion_maxima_minutos=60&limite=100` lista hasta 100 vistas, excluyendo duración desconocida y valores superiores al máximo. Sin filtro se incluyen todas; el orden es primera recepción descendente e ID de trabajo. La consulta usa solo la proyección de Seguimiento.
 
 Validación: 310 pruebas, Ruff, formato, mypy y wheel; integración de cuatro servicios 28/28. La evidencia experimental de GCP se entrega separadamente en `output/entrega4-escenarios/`.
+
+
+## Participante de Saga E5
+
+### Arranque local
+
+Usar PostgreSQL y Pulsar como en las secciones anteriores. Las migraciones se ejecutan manualmente:
+
+```bash
+uv sync --locked
+export SEGUIMIENTO_DATABASE_URL='postgresql+psycopg://seguimiento:seguimiento_local@127.0.0.1:55435/seguimiento'
+uv run --locked alembic upgrade head
+uv run --locked python scripts/preparar_pulsar.py
+export SEGUIMIENTO_PROCESSING_ENABLED=true
+uv run --locked uvicorn seguimiento_trabajos.api.app:create_app --factory --port 8003
+```
+
+La revisión `0002` añade solamente `seguimiento_operativo` y `outbox`. Conserva las tablas,
+contratos y consultas E4/E3. El dominio operativo vive en `dominio/operational_tracking.py`;
+los tres handlers nuevos usan la misma UoW del módulo. Persistencia, Avro y Pulsar permanecen
+fuera de dominio y aplicación. No se importan paquetes internos de otros servicios.
+
+| Variable | Valor predeterminado |
+|---|---|
+| `SEGUIMIENTO_TOPICO_APERTURA` | `persistent://public/default/abrir-seguimiento-trabajo-v1` |
+| `SEGUIMIENTO_TOPICO_CANCELACION` | `persistent://public/default/cancelar-seguimiento-trabajo-v1` |
+| `SEGUIMIENTO_TOPICO_TRABAJO_CANCELADO` | `persistent://public/default/trabajo-cancelado-v1` |
+| `SEGUIMIENTO_TOPICO_ABIERTO` | `persistent://public/default/seguimiento-trabajo-abierto-v1` |
+| `SEGUIMIENTO_TOPICO_APERTURA_FALLIDA` | `persistent://public/default/apertura-seguimiento-fallida-v1` |
+| `SEGUIMIENTO_TOPICO_CANCELADO` | `persistent://public/default/seguimiento-trabajo-cancelado-v1` |
+| `SEGUIMIENTO_FAIL_OPENING_WORK_ID` | Vacío; UUID de un trabajo cuya apertura nueva debe fallar en laboratorio. |
+
+Un comando de apertura válido produce `SeguimientoTrabajoAbierto.v1`. Si el trabajo o
+seguimiento están cancelados, produce `AperturaSeguimientoFallida.v1` con código
+`TRABAJO_CANCELADO` o `SEGUIMIENTO_CANCELADO`. La inyección produce
+`FALLO_CONTROLADO_APERTURA`. Un error temporal de DB/transporte se reintenta, sin rechazo empresarial.
+
+Cancelar antes de abrir persiste `CANCELADO` y confirma con `id_seguimiento=null`.
+Una apertura tardía no reactiva el seguimiento. `TrabajoCancelado.v1` conserva un hecho
+separado: bloquea aperturas y modifica la consulta de atención, pero no sustituye el
+comando de cancelación operativa.
+
+Estado, inbox y respuesta se confirman juntos. El ACK ocurre después del commit.
+Un duplicado exacto no crea otra respuesta; otro comando equivalente conserva el efecto
+empresarial y obtiene su propia respuesta correlacionada. Un mismo ID alterado pausa el
+consumidor sin confirmar éxito. El outbox espera confirmación del broker y marca la salida;
+si cae entre ambos pasos, reenvía el mismo evento. La entrega es al menos una vez.
+
+### Consulta operativa
+
+```bash
+curl --fail 'http://127.0.0.1:8003/seguimiento/trabajos/00000000-0000-0000-0000-000000000001/atencion'
+```
+
+Devuelve identidades, `id_saga`, `proyeccion`, `seguimiento_operativo`,
+`cancelacion_trabajo` y `estado_trabajo`. Los bloques pueden ser null cuando sus eventos
+no han llegado. La apertura no espera a la proyección. La cancelación del trabajo prevalece
+en `estado_trabajo` aunque lleguen después creación o cotización. El estado global de Saga
+no se calcula aquí. Un fallo controlado aislado no crea información operativa consultable.
+
+La consulta devuelve 404 sin información empresarial local, 422 para UUID inválido y 503
+si la persistencia no está disponible. Los endpoints anteriores conservan su semántica.
+
+### Demostración reproducible
+
+```bash
+uv run --locked pytest tests/integracion/test_saga_pulsar.py -v
+uv run --locked pytest tests/integracion/test_tracking.py -v
+```
+
+Estas pruebas crean bases y tópicos de laboratorio aislados. Publican los comandos con
+productores de prueba, reciben las respuestas Avro reales y consultan HTTP. Incluyen
+compensación, cancelación previa, fallo controlado, reinicio y SIGKILL antes/después del
+commit. Son pruebas del participante; no acreditan la Saga global ni implementan el BFF.

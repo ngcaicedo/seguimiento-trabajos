@@ -4,6 +4,11 @@ from typing import Any
 from sqlalchemy.exc import InterfaceError, OperationalError
 from sqlalchemy.exc import TimeoutError as PoolTimeout
 
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.messages import (
+    CancelTracking,
+    OpenTracking,
+    WorkCancelled,
+)
 from seguimiento_trabajos.modulos.seguimiento.dominio.objetos_valor import (
     DatosCreacion,
     DatosResultadoCotizacion,
@@ -11,6 +16,7 @@ from seguimiento_trabajos.modulos.seguimiento.dominio.objetos_valor import (
 from seguimiento_trabajos.modulos.seguimiento.infraestructura.mapeadores_eventos import (
     MensajeInvalido,
     leer_evento,
+    read_saga_message,
 )
 from seguimiento_trabajos.seedwork.aplicacion.excepciones import ColisionPersistencia
 from seguimiento_trabajos.seedwork.infraestructura.ciclos import AccionError
@@ -53,3 +59,31 @@ def procesador(
             raise ErrorProcesamiento(error, str(fragmento.procedencia.event_id)) from error
 
     return procesar
+
+
+def saga_processor(
+    kind: str,
+    topic: str,
+    open_tracking: Callable[[OpenTracking], None],
+    cancel_tracking: Callable[[CancelTracking], None],
+    project_cancellation: Callable[[WorkCancelled], None],
+) -> Callable[[Any], None]:
+    def process(message: Any) -> None:
+        if message.topic_name() != topic:
+            raise MensajeInvalido("Topico inesperado")
+        try:
+            record = message.value()
+        except Exception as error:
+            raise MensajeInvalido("No se pudo decodificar el mensaje") from error
+        command = read_saga_message(record, kind, message.partition_key())
+        try:
+            if isinstance(command, OpenTracking):
+                open_tracking(command)
+            elif isinstance(command, CancelTracking):
+                cancel_tracking(command)
+            else:
+                project_cancellation(command)
+        except Exception as error:
+            raise ErrorProcesamiento(error, str(command.message_id)) from error
+
+    return process

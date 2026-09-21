@@ -32,7 +32,9 @@ base = create_database('postgresql+psycopg://test:test@127.0.0.1:1/test')
 try:
     unidad = crear_uow(base)()
     flujo = componer_seguimiento_sql(base, Reloj())
-    assert set(metadata.tables) == {'inbox', 'seguimiento_trabajos'}
+    assert set(metadata.tables) == {
+        'inbox', 'seguimiento_trabajos', 'seguimiento_operativo', 'outbox',
+    }
     assert flujo.proyectar_creacion and flujo.proyectar_resultado
 finally:
     base.close()

@@ -3,15 +3,23 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
-from seguimiento_trabajos.config.bootstrap import componer_consulta, componer_listado
+from seguimiento_trabajos.config.bootstrap import (
+    componer_consulta,
+    componer_listado,
+    compose_attention,
+)
 from seguimiento_trabajos.config.database import Database
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.handlers.consultar_seguimiento import (
     ConsultarSeguimientoHandler,
+    GetAttentionHandler,
 )
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.handlers.listar_seguimiento import (
     ListarSeguimientoHandler,
 )
-from seguimiento_trabajos.modulos.seguimiento.aplicacion.vistas import RespuestaSeguimiento
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.vistas import (
+    AttentionView,
+    RespuestaSeguimiento,
+)
 from seguimiento_trabajos.seedwork.aplicacion.excepciones import PersistenciaNoDisponible
 
 router = APIRouter(prefix="/seguimiento/trabajos", tags=["seguimiento"])
@@ -65,3 +73,32 @@ def listar_seguimiento(
         return listar(duracion_maxima_minutos, limite)
     except PersistenciaNoDisponible as error:
         raise HTTPException(503, "Persistencia no disponible") from error
+
+
+def get_attention_query(request: Request) -> GetAttentionHandler:
+    database = cast(Database | None, request.app.state.database)
+    if database is None:
+        raise HTTPException(503, "Base de datos no configurada")
+    return compose_attention(database)
+
+
+@router.get(
+    "/{id_trabajo}/atencion",
+    response_model=AttentionView,
+    responses={
+        404: {"description": "Informacion local no disponible"},
+        503: {"description": "Persistencia no disponible"},
+    },
+)
+def get_attention(
+    id_trabajo: UUID, query: Annotated[GetAttentionHandler, Depends(get_attention_query)]
+) -> AttentionView:
+    if id_trabajo.int == 0:
+        raise HTTPException(422, "El ID del trabajo debe ser un UUID no nulo")
+    try:
+        result = query(id_trabajo)
+    except PersistenciaNoDisponible as error:
+        raise HTTPException(503, "Persistencia no disponible") from error
+    if result is None:
+        raise HTTPException(404, "Informacion local no disponible")
+    return result

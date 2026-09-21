@@ -1,20 +1,32 @@
 from collections.abc import Callable
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.exc import OperationalError, TimeoutError
 from sqlalchemy.orm import Session
 
 from seguimiento_trabajos.modulos.seguimiento.aplicacion.metadatos import MetadatosProyeccion
-from seguimiento_trabajos.modulos.seguimiento.aplicacion.vistas import RespuestaSeguimiento
+from seguimiento_trabajos.modulos.seguimiento.aplicacion.vistas import (
+    AttentionView,
+    RespuestaSeguimiento,
+    attention_view,
+)
 from seguimiento_trabajos.modulos.seguimiento.dominio.excepciones import ConflictoFragmentos
+from seguimiento_trabajos.modulos.seguimiento.dominio.operational_tracking import (
+    OperationalTracking,
+)
 from seguimiento_trabajos.modulos.seguimiento.dominio.vistas import VistaSeguimiento
 from seguimiento_trabajos.modulos.seguimiento.infraestructura.mapeadores import (
     actualizar_fila,
     cargar_respuesta,
     cargar_vista,
+    load_operational,
+    update_operational,
 )
-from seguimiento_trabajos.modulos.seguimiento.infraestructura.vistas import VistaSeguimientoSQL
+from seguimiento_trabajos.modulos.seguimiento.infraestructura.vistas import (
+    OperationalTrackingSQL,
+    VistaSeguimientoSQL,
+)
 from seguimiento_trabajos.seedwork.aplicacion.excepciones import PersistenciaNoDisponible
 
 
@@ -96,3 +108,57 @@ class RepositorioLecturaSeguimientoSQL:
                 return [cargar_respuesta(fila) for fila in sesion.scalars(consulta)]
         except (OperationalError, TimeoutError) as error:
             raise PersistenciaNoDisponible("Persistencia no disponible") from error
+
+    def get_attention(self, work_id: UUID) -> AttentionView | None:
+        try:
+            with self.crear_sesion() as session:
+                statement = (
+                    select(VistaSeguimientoSQL, OperationalTrackingSQL)
+                    .join(
+                        OperationalTrackingSQL,
+                        VistaSeguimientoSQL.id_trabajo == OperationalTrackingSQL.id_trabajo,
+                        full=True,
+                    )
+                    .where(
+                        or_(
+                            VistaSeguimientoSQL.id_trabajo == work_id,
+                            OperationalTrackingSQL.id_trabajo == work_id,
+                        )
+                    )
+                )
+                row = session.execute(statement).one_or_none()
+                if row is None:
+                    return None
+                projection, operational = row
+                return attention_view(
+                    cargar_respuesta(projection) if projection else None,
+                    load_operational(operational) if operational else None,
+                )
+        except (OperationalError, TimeoutError) as error:
+            raise PersistenciaNoDisponible("Persistencia no disponible") from error
+
+
+class OperationalRepositorySQL:
+    def __init__(self, session: Session) -> None:
+        self.session = session
+        self.rows: dict[UUID, OperationalTrackingSQL | None] = {}
+
+    def get(self, work_id: UUID) -> OperationalTracking | None:
+        if work_id not in self.rows:
+            self.rows[work_id] = self.session.scalar(
+                select(OperationalTrackingSQL)
+                .where(OperationalTrackingSQL.id_trabajo == work_id)
+                .with_for_update()
+            )
+        row = self.rows[work_id]
+        return load_operational(row) if row is not None else None
+
+    def save(self, tracking: OperationalTracking) -> None:
+        work_id = tracking.identity.work_id
+        self.get(work_id)
+        row = self.rows[work_id]
+        if row is None:
+            row = OperationalTrackingSQL()
+            self.session.add(row)
+            self.rows[work_id] = row
+        update_operational(row, tracking)

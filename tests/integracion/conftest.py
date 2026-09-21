@@ -48,5 +48,7 @@ def base_integracion() -> Iterator[Database]:
 @pytest.fixture
 def base(base_integracion: Database) -> Database:
     with base_integracion.engine.begin() as conexion:
-        conexion.execute(text("TRUNCATE inbox, seguimiento_trabajos"))
+        conexion.execute(
+            text("TRUNCATE inbox, seguimiento_trabajos, seguimiento_operativo, outbox")
+        )
     return base_integracion

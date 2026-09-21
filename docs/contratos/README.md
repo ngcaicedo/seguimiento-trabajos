@@ -1,17 +1,43 @@
-# Contratos de consumo V1
+# Contratos de Seguimiento
 
-Estado: **schemas provisionales de Seguimiento**, derivados del [contrato común](../plans/comun/01-contratos-y-datos.md). No son exportaciones verificadas de los productores propietarios. El cotejo con Orquestación/Cotizaciones y el intercambio grupal quedan pendientes.
+## Contratos conservados E4/E3
 
-| Evento | Propietario | Schema | Ejemplo |
-|---|---|---|---|
-| TrabajoCreado.v1 | Orquestación | [trabajo-creado-v1.avsc](trabajo-creado-v1.avsc) | [JSON](trabajo-creado-v1.ejemplo.json) |
-| CotizacionRegistrada.v1 | Cotizaciones | [cotizacion-registrada-v1.avsc](cotizacion-registrada-v1.avsc) | [JSON](cotizacion-registrada-v1.ejemplo.json) |
-| CotizacionRechazada.v1 | Cotizaciones | [cotizacion-rechazada-v1.avsc](cotizacion-rechazada-v1.avsc) | [JSON](cotizacion-rechazada-v1.ejemplo.json) |
+Se conservan los artefactos y lectores existentes de `TrabajoCreado.v1`,
+`CotizacionRegistrada.v1` y `CotizacionRechazada.v1`. El schema de Trabajo usa
+`orquestacion.eventos`; los schemas de cotización siguen sus archivos publicados.
+El lector v2 acepta `duracion_estimada_minutos` opcional y mantiene lectura del escritor anterior.
+La procedencia histórica consta en `procedencia.json`; E5 no modifica esos artefactos.
 
-Los registros son planos, sin namespace Avro adicional, con nombres completos `TrabajoCreadoV1`, `CotizacionRegistradaV1` y `CotizacionRechazadaV1`. Todos sus campos son requeridos; las diferencias entre propuesta y rechazo se expresan con registros separados. `importe_menor` es `long` y los ejemplos usan enteros de unidades menores COP. Envelope, campos y semántica siguen el contrato común; orden de campos y schemas concretos son la materialización provisional local.
+## Contratos E5
 
-Las clases lectoras están en `modulos/seguimiento/infraestructura/esquemas/v1/eventos.py`; las pruebas cotejan su schema completo con estos archivos y ejercitan Avro binario. La preparación registra estos schemas y crea suscripciones antes del tráfico. Usar tópicos aislados mientras no exista acuerdo sobre las exportaciones de los propietarios.
+Fuente funcional: acuerdo `entrega5/contratos-saga-bff-propuesta.md`, confirmado vigente
+por el responsable del proyecto. Los detalles Avro se materializan aquí para compartir
+los mismos artefactos con el equipo; esto no acredita implementación de los otros servicios.
 
-El mapeador valida tipo/tópico, clave, UUID, fechas, correlación y tipos; el dominio valida las invariantes del fragmento. Los resultados no publican un campo `estado`: Seguimiento lo deriva del tipo de evento. El formato JSONB privado con `version_formato` no es un contrato Pulsar.
+| Contrato | Dirección | Artefactos |
+|---|---|---|
+| AbrirSeguimientoTrabajo.v1 | Orquestación → Seguimiento | `abrir-seguimiento-trabajo-v1.avsc`, `.ejemplo.json` |
+| CancelarSeguimientoTrabajo.v1 | Orquestación → Seguimiento | `cancelar-seguimiento-trabajo-v1.avsc`, `.ejemplo.json` |
+| TrabajoCancelado.v1 | Orquestación → Seguimiento | `trabajo-cancelado-v1.avsc`, `.ejemplo.json` |
+| SeguimientoTrabajoAbierto.v1 | Seguimiento → Orquestación | `seguimiento-trabajo-abierto-v1.avsc`, `.ejemplo.json` |
+| AperturaSeguimientoFallida.v1 | Seguimiento → Orquestación | `apertura-seguimiento-fallida-v1.avsc`, `.ejemplo.json` |
+| SeguimientoTrabajoCancelado.v1 | Seguimiento → Orquestación | `seguimiento-trabajo-cancelado-v1.avsc`, `.ejemplo.json` |
 
-[procedencia.json](procedencia.json) registra el documento fuente y los hashes de los artefactos locales. Las pruebas usan publicadores de contrato expresamente identificados como dobles. No se incluyeron tareas de evolución ni congelación de lectores.
+Cada tópico predeterminado es `persistent://public/default/<nombre-del-archivo-sin-extension>`.
+La clave es `id_trabajo`. Namespace de entradas: `orquestacion.eventos`, conservando la
+convención de sus comandos actuales; namespace de respuestas: `seguimiento.eventos`.
+
+Los registros son planos. UUID y fechas se codifican como strings; fechas con zona horaria
+se normalizan a UTC. `version_contrato=1`, `correlacion=id_solicitud` y `id_saga` conserva
+su identidad independiente. En respuestas `causacion` identifica el comando recibido.
+`id_seguimiento` es nullable en `SeguimientoTrabajoCancelado.v1`; no se añade `id_cotizacion`
+a respuestas que no lo contemplan. `version_trabajo` es un entero positivo.
+
+Se valida schema, tipo, tópico, clave, fechas, identidades y correlación antes del handler.
+Las reglas de apertura y cancelación pertenecen al dominio. `detalle` nunca dirige transiciones.
+Los códigos propios de fallo son `FALLO_CONTROLADO_APERTURA`, `SEGUIMIENTO_CANCELADO`
+y `TRABAJO_CANCELADO`. No se añaden campos de prueba al contrato.
+
+Los archivos se cotejan con las clases en `infraestructura/esquemas/v1/saga.py` y se ejercitan
+con Avro binario y Pulsar real. Los productores de las pruebas sustituyen explícitamente a
+Orquestación. Los hashes E5 y fuente se registran en `procedencia-e5.json`.

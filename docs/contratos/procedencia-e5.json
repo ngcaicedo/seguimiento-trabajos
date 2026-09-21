@@ -1,0 +1,19 @@
+{
+  "estado": "acuerdo_vigente_materializado_localmente",
+  "fuente": "entrega5/contratos-saga-bff-propuesta.md",
+  "sha256_fuente": "7ed0de927973d9a11e2d5333b957d5c7d53a82aa9b83f4eb31f64d89b8111c56",
+  "artefactos": {
+    "abrir-seguimiento-trabajo-v1.avsc": "9dea48bdbf87e3033254518f388b5753c7fc11e8dd9e601bade4e8746bd42d8c",
+    "abrir-seguimiento-trabajo-v1.ejemplo.json": "13f52951fbe6a6389820852d787a5e8b212f6f659a802fd80725b21896d0e0f1",
+    "apertura-seguimiento-fallida-v1.avsc": "ee199bffcadcea058efec74a4bf79753ebd4fd5990283de8152ab7b4532ac9fc",
+    "apertura-seguimiento-fallida-v1.ejemplo.json": "7b5e5cd259dbafd65303e2e571da40f384afbb10a13db3e9fa19e76a5e8519d5",
+    "cancelar-seguimiento-trabajo-v1.avsc": "87006d01e912ea83a2ef61c85775765f510bdafba9f527384bded04e3c224db3",
+    "cancelar-seguimiento-trabajo-v1.ejemplo.json": "8b51b46a4eadb99ce54c659a2391de5cb34194f6a027a48c902a218b186b9901",
+    "seguimiento-trabajo-abierto-v1.avsc": "e6d186627d99a7cd4b6b685ddfa62cc4d9f63846aed1bbfce087c81bf5e9fe9c",
+    "seguimiento-trabajo-abierto-v1.ejemplo.json": "988e11ae1fdf79278de132f17332c100187136e168ec830f27fbd0abb4c87827",
+    "seguimiento-trabajo-cancelado-v1.avsc": "4c54c19382afb93297f92f48f89c823ac73f1ac76470b0980372a5c612603687",
+    "seguimiento-trabajo-cancelado-v1.ejemplo.json": "e78cbf4d7ac58dd4c27c66fb235ffe158f8e5172a2b250347bec81e51086a116",
+    "trabajo-cancelado-v1.avsc": "64b1414d9b148cbe16fc494bc4f99b488799c189e8c27352344e081a7839e612",
+    "trabajo-cancelado-v1.ejemplo.json": "5a505f2659afc1b72ef1e282dfa10c6b052237e3fdf5bc6674246330983a4dc4"
+  }
+}

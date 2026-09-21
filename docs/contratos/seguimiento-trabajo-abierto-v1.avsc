@@ -1,0 +1,57 @@
+{
+  "type": "record",
+  "name": "SeguimientoTrabajoAbiertoV1",
+  "namespace": "seguimiento.eventos",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string"
+    },
+    {
+      "name": "tipo",
+      "default": "SeguimientoTrabajoAbierto.v1",
+      "type": "string"
+    },
+    {
+      "name": "version_contrato",
+      "default": 1,
+      "type": "int"
+    },
+    {
+      "name": "instante",
+      "type": "string"
+    },
+    {
+      "name": "correlacion",
+      "type": "string"
+    },
+    {
+      "name": "causacion",
+      "type": "string"
+    },
+    {
+      "name": "id_saga",
+      "type": "string"
+    },
+    {
+      "name": "id_solicitud",
+      "type": "string"
+    },
+    {
+      "name": "id_trabajo",
+      "type": "string"
+    },
+    {
+      "name": "id_partner",
+      "type": "string"
+    },
+    {
+      "name": "id_seguimiento",
+      "type": "string"
+    },
+    {
+      "name": "abierto_en",
+      "type": "string"
+    }
+  ]
+}
